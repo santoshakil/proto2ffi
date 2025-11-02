@@ -406,9 +406,9 @@ void main() {
 
     test('Maximum estimated rows', () {
       final plan = calloc<QueryPlan>();
-      plan.ref.estimated_rows = 18446744073709551615;
+      plan.ref.estimated_rows = 9223372036854775807;
 
-      expect(plan.ref.estimated_rows, equals(18446744073709551615));
+      expect(plan.ref.estimated_rows, equals(9223372036854775807));
 
       calloc.free(plan);
     });

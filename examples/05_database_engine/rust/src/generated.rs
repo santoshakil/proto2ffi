@@ -831,26 +831,24 @@ impl QueryPlan {
     pub const SIZE: usize = 1368;
     pub const ALIGNMENT: usize = 8;
 
-    pub fn get_child(&self, idx: usize) -> Option<&QueryPlanChild> {
+    pub fn get_child(&self, idx: usize) -> Option<QueryPlanChildRef<'_>> {
         if idx >= self.children_count as usize || idx >= 8 {
             return None;
         }
-        unsafe {
-            let offset = idx * QueryPlanChild::SIZE;
-            let ptr = self.children.as_ptr().add(offset);
-            Some(&*(ptr as *const QueryPlanChild))
-        }
+        let offset = idx * QueryPlanChild::SIZE;
+        Some(QueryPlanChildRef {
+            data: &self.children[offset..offset + QueryPlanChild::SIZE],
+        })
     }
 
-    pub fn get_child_mut(&mut self, idx: usize) -> Option<&mut QueryPlanChild> {
+    pub fn get_child_mut(&mut self, idx: usize) -> Option<QueryPlanChildMut<'_>> {
         if idx >= self.children_count as usize || idx >= 8 {
             return None;
         }
-        unsafe {
-            let offset = idx * QueryPlanChild::SIZE;
-            let ptr = self.children.as_mut_ptr().add(offset);
-            Some(&mut *(ptr as *mut QueryPlanChild))
-        }
+        let offset = idx * QueryPlanChild::SIZE;
+        Some(QueryPlanChildMut {
+            data: &mut self.children[offset..offset + QueryPlanChild::SIZE],
+        })
     }
 }
 
@@ -864,6 +862,63 @@ pub struct QueryPlanChild {
 
 impl QueryPlanChild {
     pub const SIZE: usize = 152;
+    pub const ALIGNMENT: usize = 8;
+}
+
+pub struct QueryPlanChildRef<'a> {
+    data: &'a [u8],
+}
+
+impl<'a> QueryPlanChildRef<'a> {
+    pub fn estimated_cost(&self) -> f64 {
+        f64::from_le_bytes(self.data[0..8].try_into().unwrap())
+    }
+
+    pub fn estimated_rows(&self) -> u64 {
+        u64::from_le_bytes(self.data[8..16].try_into().unwrap())
+    }
+
+    pub fn children_count(&self) -> u32 {
+        u32::from_le_bytes(self.data[16..20].try_into().unwrap())
+    }
+
+    pub fn operation(&self) -> &[u8] {
+        &self.data[20..148]
+    }
+}
+
+pub struct QueryPlanChildMut<'a> {
+    data: &'a mut [u8],
+}
+
+impl<'a> QueryPlanChildMut<'a> {
+    pub fn estimated_cost(&self) -> f64 {
+        f64::from_le_bytes(self.data[0..8].try_into().unwrap())
+    }
+
+    pub fn set_estimated_cost(&mut self, value: f64) {
+        self.data[0..8].copy_from_slice(&value.to_le_bytes());
+    }
+
+    pub fn estimated_rows(&self) -> u64 {
+        u64::from_le_bytes(self.data[8..16].try_into().unwrap())
+    }
+
+    pub fn set_estimated_rows(&mut self, value: u64) {
+        self.data[8..16].copy_from_slice(&value.to_le_bytes());
+    }
+
+    pub fn children_count(&self) -> u32 {
+        u32::from_le_bytes(self.data[16..20].try_into().unwrap())
+    }
+
+    pub fn set_children_count(&mut self, value: u32) {
+        self.data[16..20].copy_from_slice(&value.to_le_bytes());
+    }
+
+    pub fn operation_mut(&mut self) -> &mut [u8] {
+        &mut self.data[20..148]
+    }
 }
 impl Default for QueryPlan {
     fn default() -> Self {

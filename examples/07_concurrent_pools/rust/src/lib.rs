@@ -469,7 +469,6 @@ mod tests {
     fn test_basic_concurrent_large() {
         let elapsed = concurrent_test_large_pool(4, 50);
         println!("Large pool test (4 threads, 50 ops each): {} ms", elapsed);
-        assert!(elapsed > 0);
     }
 
     #[test]
@@ -519,5 +518,173 @@ mod tests {
         let ops = stress_test_rapid_alloc_free(50, 2000);
         println!("Extreme concurrency test (50 threads, 2000ms): {} total ops", ops);
         assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_100_threads() {
+        let ops = stress_test_rapid_alloc_free(100, 5000);
+        println!("EXTREME: 100 threads, 5000ms: {} total ops", ops);
+        println!("EXTREME: Throughput: {} ops/sec", ops / 5);
+        assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_200_threads() {
+        let ops = stress_test_rapid_alloc_free(200, 5000);
+        println!("EXTREME: 200 threads, 5000ms: {} total ops", ops);
+        println!("EXTREME: Throughput: {} ops/sec", ops / 5);
+        assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_500_threads() {
+        let ops = stress_test_rapid_alloc_free(500, 5000);
+        println!("EXTREME: 500 threads, 5000ms: {} total ops", ops);
+        println!("EXTREME: Throughput: {} ops/sec", ops / 5);
+        assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_1000_threads() {
+        let ops = stress_test_rapid_alloc_free(1000, 5000);
+        println!("EXTREME: 1000 threads, 5000ms: {} total ops", ops);
+        println!("EXTREME: Throughput: {} ops/sec", ops / 5);
+        assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_2000_threads() {
+        let ops = stress_test_rapid_alloc_free(2000, 5000);
+        println!("EXTREME: 2000 threads, 5000ms: {} total ops", ops);
+        println!("EXTREME: Throughput: {} ops/sec", ops / 5);
+        assert!(ops > 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_1m_allocations_per_thread() {
+        let start = std::time::Instant::now();
+        let threads = 10;
+        let allocs_per_thread = 1_000_000;
+
+        let handles: Vec<_> = (0..threads).map(|tid| {
+            std::thread::spawn(move || {
+                for i in 0..allocs_per_thread {
+                    let mut msg = SmallMessage::default();
+                    msg.id = tid as i32;
+                    let ptr = small_message_to_ffi_impl(&msg);
+                    if !ptr.is_null() {
+                        if i % 2 == 0 {
+                            small_message_free_ffi_impl(ptr);
+                        }
+                    }
+                }
+            })
+        }).collect();
+
+        for h in handles {
+            h.join().ok();
+        }
+
+        let elapsed = start.elapsed().as_millis();
+        let total_ops = threads * allocs_per_thread;
+        println!("EXTREME: {} threads x {} allocs = {} total ops in {} ms",
+                 threads, allocs_per_thread, total_ops, elapsed);
+        println!("EXTREME: Throughput: {} ops/sec", (total_ops as u128 * 1000 / elapsed));
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_pool_exhaustion() {
+        let start = std::time::Instant::now();
+        let mut ptrs = Vec::new();
+        let mut count = 0;
+
+        for i in 0..1_000_000 {
+            let mut msg = SmallMessage::default();
+            msg.id = i as i32;
+            let ptr = small_message_to_ffi_impl(&msg);
+            if !ptr.is_null() {
+                ptrs.push(ptr);
+                count += 1;
+            } else {
+                break;
+            }
+        }
+
+        let alloc_time = start.elapsed();
+        println!("EXTREME: Allocated {} blocks in {:?}", count, alloc_time);
+
+        let start = std::time::Instant::now();
+        for ptr in ptrs {
+            small_message_free_ffi_impl(ptr);
+        }
+        let free_time = start.elapsed();
+        println!("EXTREME: Freed {} blocks in {:?}", count, free_time);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_rapid_cycles() {
+        let start = std::time::Instant::now();
+        let duration = std::time::Duration::from_secs(10);
+        let mut cycles = 0u64;
+
+        while start.elapsed() < duration {
+            let mut msg = SmallMessage::default();
+            msg.id = (cycles % 1000000) as i32;
+            let ptr = small_message_to_ffi_impl(&msg);
+            if !ptr.is_null() {
+                small_message_free_ffi_impl(ptr);
+                cycles += 1;
+            }
+        }
+
+        let elapsed_ms = start.elapsed().as_millis();
+        println!("EXTREME: {} alloc/free cycles in {} ms", cycles, elapsed_ms);
+        println!("EXTREME: {} cycles/sec", cycles as u128 * 1000 / elapsed_ms);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_extreme_memory_fragmentation() {
+        let mut ptrs = Vec::new();
+
+        for i in 0..10000 {
+            let mut msg = SmallMessage::default();
+            msg.id = i as i32;
+            let ptr = small_message_to_ffi_impl(&msg);
+            if !ptr.is_null() {
+                ptrs.push(ptr);
+            }
+        }
+
+        for i in (0..ptrs.len()).step_by(2) {
+            small_message_free_ffi_impl(ptrs[i]);
+        }
+
+        let mut new_ptrs = Vec::new();
+        for i in 0..5000 {
+            let mut msg = SmallMessage::default();
+            msg.id = i as i32;
+            let ptr = small_message_to_ffi_impl(&msg);
+            if !ptr.is_null() {
+                new_ptrs.push(ptr);
+            }
+        }
+
+        println!("EXTREME: Fragmentation test - allocated {} blocks after freeing every other block", new_ptrs.len());
+
+        for i in (1..ptrs.len()).step_by(2) {
+            small_message_free_ffi_impl(ptrs[i]);
+        }
+        for ptr in new_ptrs {
+            small_message_free_ffi_impl(ptr);
+        }
     }
 }

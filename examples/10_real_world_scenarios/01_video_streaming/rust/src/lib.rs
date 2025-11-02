@@ -2,7 +2,6 @@ mod generated;
 
 use generated::*;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 static FRAME_METADATA_POOL: once_cell::sync::Lazy<FrameMetadataPool> =
     once_cell::sync::Lazy::new(|| FrameMetadataPool::new(5000));
@@ -65,14 +64,16 @@ pub extern "C" fn video_compress_frame(
 
     unsafe {
         let y_slice = std::slice::from_raw_parts(y_plane, y_len as usize);
-        let u_slice = std::slice::from_raw_parts(u_plane, u_len as usize);
-        let v_slice = std::slice::from_raw_parts(v_plane, v_len as usize);
+        let _u_slice = std::slice::from_raw_parts(u_plane, u_len as usize);
+        let _v_slice = std::slice::from_raw_parts(v_plane, v_len as usize);
 
-        let compression_ratio = (quality * 0.1 + 0.05) as usize;
-        let target_size = std::cmp::min(
-            (y_len as usize + u_len as usize + v_len as usize) / compression_ratio,
-            1048576
-        );
+        let compression_ratio = std::cmp::max(1, (quality * 0.1 + 0.05) as usize);
+        let total_input = y_len as usize + u_len as usize + v_len as usize;
+        let target_size = if compression_ratio > 0 {
+            std::cmp::min(total_input / compression_ratio, 1048576)
+        } else {
+            std::cmp::min(total_input, 1048576)
+        };
 
         (*ptr).data_count = target_size as u32;
         (*ptr).data_size = target_size as u32;
@@ -88,8 +89,8 @@ pub extern "C" fn video_compress_frame(
         (*ptr).metadata.quality_score = quality;
         (*ptr).metadata.timestamp_us = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_micros() as u64;
+            .map(|d| d.as_micros() as u64)
+            .unwrap_or(0);
     }
 
     ptr
@@ -213,12 +214,20 @@ pub extern "C" fn video_detect_frame_drop(
     current_frame != expected_frame
 }
 
+#[repr(C)]
+pub struct PoolStats {
+    pub metadata_allocated: usize,
+    pub metadata_capacity: usize,
+    pub compressed_allocated: usize,
+    pub compressed_capacity: usize,
+}
+
 #[no_mangle]
-pub extern "C" fn video_pool_stats() -> (usize, usize, usize, usize) {
-    (
-        FRAME_METADATA_POOL.allocated_count(),
-        FRAME_METADATA_POOL.capacity(),
-        COMPRESSED_FRAME_POOL.allocated_count(),
-        COMPRESSED_FRAME_POOL.capacity(),
-    )
+pub extern "C" fn video_pool_stats() -> PoolStats {
+    PoolStats {
+        metadata_allocated: FRAME_METADATA_POOL.allocated_count(),
+        metadata_capacity: FRAME_METADATA_POOL.capacity(),
+        compressed_allocated: COMPRESSED_FRAME_POOL.allocated_count(),
+        compressed_capacity: COMPRESSED_FRAME_POOL.capacity(),
+    }
 }

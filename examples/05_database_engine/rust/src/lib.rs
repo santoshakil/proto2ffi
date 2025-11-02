@@ -618,18 +618,18 @@ pub extern "C" fn db_build_complex_query_plan(plan_ptr: *mut QueryPlan, depth: u
     if depth > 0 && depth <= 3 {
         plan.children_count = 2;
 
-        if let Some(left) = plan.get_child_mut(0) {
-            copy_str_to_array("SeqScan", &mut left.operation);
-            left.estimated_cost = 100.0;
-            left.estimated_rows = 1000;
-            left.children_count = 0;
+        if let Some(mut left) = plan.get_child_mut(0) {
+            copy_str_to_array("SeqScan", left.operation_mut());
+            left.set_estimated_cost(100.0);
+            left.set_estimated_rows(1000);
+            left.set_children_count(0);
         }
 
-        if let Some(right) = plan.get_child_mut(1) {
-            copy_str_to_array("IndexScan", &mut right.operation);
-            right.estimated_cost = 50.0;
-            right.estimated_rows = 500;
-            right.children_count = 0;
+        if let Some(mut right) = plan.get_child_mut(1) {
+            copy_str_to_array("IndexScan", right.operation_mut());
+            right.set_estimated_cost(50.0);
+            right.set_estimated_rows(500);
+            right.set_children_count(0);
         }
     }
 
