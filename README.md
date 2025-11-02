@@ -19,7 +19,7 @@ Proto2FFI generates high-performance, zero-copy FFI bindings between Dart and Ru
 - **🛠️ Type Safe**: Generated code is fully type-safe in both languages
 - **📝 Protocol Buffers**: Use familiar .proto files as schema
 - **✅ Production-Ready**: 500+ tests across 12 comprehensive examples
-- **🐛 Battle-Tested**: 7 critical bugs discovered and fixed through extensive testing
+- **🐛 Battle-Tested**: Extensively validated with real-world FFI integration
 - **🎯 Zero Warnings**: Clean compilation across all examples
 
 ## 🚀 Quick Start
@@ -198,7 +198,7 @@ See [examples/README.md](./examples/README.md) for detailed guides and [EXAMPLES
 
 ## 🐛 Quality Assurance & Testing
 
-Through extensive testing with **500+ test cases** across **12 comprehensive examples**, we discovered and fixed **7 critical bugs**:
+Through extensive testing with **500+ test cases** across **12 comprehensive examples**, we ensure high quality and reliability:
 
 ### Critical Bugs Fixed
 
@@ -262,7 +262,6 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 - 🐛 [Issue Tracker](https://github.com/yourusername/proto2ffi/issues)
 - 💬 [Discussions](https://github.com/yourusername/proto2ffi/discussions)
-- 📧 Email: your.email@example.com
 
 ---
 
