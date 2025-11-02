@@ -92,7 +92,7 @@ mod tests {
         let p1 = Point { x: 0.0, y: 0.0 };
         let p2 = Point { x: 3.0, y: 4.0 };
 
-        let dist = unsafe { point_distance(&p1 as *const Point, &p2 as *const Point) };
+        let dist = point_distance(&p1 as *const Point, &p2 as *const Point);
         assert_eq!(dist, 5.0);
     }
 
@@ -100,29 +100,25 @@ mod tests {
     fn test_counter_increment() {
         let mut counter = Counter::default();
 
-        unsafe {
-            counter_increment(&mut counter as *mut Counter);
-            assert_eq!(counter.value, 1);
+        counter_increment(&mut counter as *mut Counter);
+        assert_eq!(counter.value, 1);
 
-            counter_increment(&mut counter as *mut Counter);
-            assert_eq!(counter.value, 2);
-        }
+        counter_increment(&mut counter as *mut Counter);
+        assert_eq!(counter.value, 2);
     }
 
     #[test]
     fn test_stats() {
         let mut stats = Stats::default();
 
-        unsafe {
-            stats_update(&mut stats as *mut Stats, 10.0);
-            stats_update(&mut stats as *mut Stats, 20.0);
-            stats_update(&mut stats as *mut Stats, 30.0);
+        stats_update(&mut stats as *mut Stats, 10.0);
+        stats_update(&mut stats as *mut Stats, 20.0);
+        stats_update(&mut stats as *mut Stats, 30.0);
 
-            assert_eq!(stats.count, 3);
-            assert_eq!(stats.sum, 60.0);
-            assert_eq!(stats.min, 10.0);
-            assert_eq!(stats.max, 30.0);
-            assert_eq!(stats.avg, 20.0);
-        }
+        assert_eq!(stats.count, 3);
+        assert_eq!(stats.sum, 60.0);
+        assert_eq!(stats.min, 10.0);
+        assert_eq!(stats.max, 30.0);
+        assert_eq!(stats.avg, 20.0);
     }
 }

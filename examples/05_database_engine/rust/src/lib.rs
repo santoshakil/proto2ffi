@@ -18,6 +18,7 @@ struct TableData {
     rows: Vec<Vec<ValueData>>,
 }
 
+#[allow(dead_code)]
 struct IndexData {
     table: String,
     columns: Vec<String>,
@@ -25,6 +26,7 @@ struct IndexData {
     unique: bool,
 }
 
+#[allow(dead_code)]
 struct TransactionData {
     state: TransactionState,
     isolation: IsolationLevel,

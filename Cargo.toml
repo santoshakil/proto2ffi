@@ -15,6 +15,7 @@ members = [
     "examples/10_real_world_scenarios/03_trading_system/rust",
     "examples/10_real_world_scenarios/04_iot_aggregation/rust",
     "examples/10_real_world_scenarios/05_ml_pipeline/rust",
+    "examples/12_flutter_app/rust",
 ]
 
 [workspace.package]

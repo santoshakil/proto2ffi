@@ -1,0 +1,13 @@
+[package]
+name = "task_manager"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "task_manager"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+tokio = { version = "1.36", features = ["sync", "rt-multi-thread"] }
+once_cell = "1.19"
+parking_lot = "0.12"

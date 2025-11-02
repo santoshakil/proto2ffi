@@ -2,7 +2,6 @@ mod generated;
 
 use generated::*;
 use std::sync::{Arc, Mutex};
-use std::f32::consts::PI;
 
 static TRANSFORM_POOL: once_cell::sync::Lazy<TransformPool> =
     once_cell::sync::Lazy::new(|| TransformPool::new(10000));
@@ -32,7 +31,7 @@ pub extern "C" fn game_create_entity(
 
         if !name_ptr.is_null() && name_len > 0 {
             let len = std::cmp::min(name_len as usize, 63);
-            let name_slice = std::slice::from_raw_parts(name_ptr, len);
+            let _name_slice = std::slice::from_raw_parts(name_ptr, len);
             std::ptr::copy_nonoverlapping(name_ptr, (*ptr).name.as_mut_ptr(), len);
             (*ptr).name[len] = 0;
         }

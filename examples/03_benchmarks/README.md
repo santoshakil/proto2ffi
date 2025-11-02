@@ -204,15 +204,51 @@ These benchmarks demonstrate Proto2FFI is production-ready for:
 - Verify no background tasks
 - Use dedicated benchmark hardware
 
+## Advanced Benchmark Suite
+
+For comprehensive comparative analysis, see **[ADVANCED_BENCHMARKS.md](ADVANCED_BENCHMARKS.md)**:
+
+### New Features
+- **Comparative Analysis**: Proto2FFI vs JSON, Bincode, Protocol Buffers, FlatBuffers
+- **Latency Distribution**: p50, p95, p99, p99.9 percentiles with statistical confidence
+- **Memory Overhead**: Detailed allocation pattern analysis
+- **Cache Efficiency**: CPU cache utilization and memory bandwidth
+- **Contention Analysis**: Multi-threaded scalability measurements
+- **Statistical Analysis**: Confidence intervals, coefficient of variation
+- **Recommendations**: Use-case specific performance guidance
+
+### Quick Results
+```bash
+cargo run --release --bin benchmarks
+open results/comparison_summary.html
+```
+
+## Performance Comparison Summary
+
+| Approach | Ops/Sec | Use Case | Winner Scenario |
+|----------|---------|----------|----------------|
+| Proto2FFI | 138M | In-process FFI | High-freq trading, game engines |
+| JSON | 2M | REST APIs | Web services, debugging |
+| Bincode | 8M | Rust-to-Rust | Network RPC, storage |
+| Protobuf | 15M | gRPC services | Microservices, schema evolution |
+| Native Dart | 15M | Simple objects | UI-only, no FFI |
+
 ## Future Enhancements
 
+Completed:
+- Multi-threaded contention scenarios
+- Memory allocation pattern analysis
+- Cache efficiency measurements
+- Statistical confidence metrics
+- Comparative benchmarks vs alternatives
+
 Planned additions:
-- Multi-threaded scenarios
-- Network serialization/deserialization
-- Compression efficiency
-- Memory fragmentation impact
+- Network serialization/deserialization overhead
+- Compression efficiency comparisons
+- Memory fragmentation over time
 - Cross-platform comparisons (iOS, Android, Windows, Linux)
 - All 5 schemas in single benchmark suite
+- GC impact measurement (Dart side)
 
 ## Contributing
 

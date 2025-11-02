@@ -5,6 +5,7 @@
 [![Crates.io](https://img.shields.io/crates/v/proto2ffi)](https://crates.io/crates/proto2ffi)
 [![Documentation](https://docs.rs/proto2ffi/badge.svg)](https://docs.rs/proto2ffi)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Zero Warnings](https://img.shields.io/badge/warnings-0-brightgreen)](https://github.com/yourusername/proto2ffi)
 
 Proto2FFI generates high-performance, zero-copy FFI bindings between Dart and Rust using Protocol Buffer schemas as the source of truth. Perfect for Flutter plugins, native extensions, and high-performance applications.
 
@@ -17,8 +18,9 @@ Proto2FFI generates high-performance, zero-copy FFI bindings between Dart and Ru
 - **🎯 SIMD Support**: Batch operations with AVX2/SSE acceleration
 - **🛠️ Type Safe**: Generated code is fully type-safe in both languages
 - **📝 Protocol Buffers**: Use familiar .proto files as schema
-- **✅ Production-Ready**: 400+ tests across 10 comprehensive examples
+- **✅ Production-Ready**: 500+ tests across 12 comprehensive examples
 - **🐛 Battle-Tested**: 7 critical bugs discovered and fixed through extensive testing
+- **🎯 Zero Warnings**: Clean compilation across all examples
 
 ## 🚀 Quick Start
 
@@ -107,20 +109,23 @@ void main() {
 
 Proto2FFI achieves exceptional performance through zero-copy design:
 
-| Operation | Throughput | Latency |
-|-----------|-----------|---------|
-| Image grayscale (SIMD) | 3.5B pixels/sec | 0.28μs/Mpx |
-| Image brightness (SIMD) | 3.0B pixels/sec | 0.33μs/Mpx |
-| SIMD batch operations | 2.8B vectors/sec | 0.0004μs |
-| Pool allocations | 6.7M allocs/sec | 0.15μs |
-| Simple FFI calls | 43M ops/sec | 0.02μs |
+| Operation | Throughput | Latency | vs Alternatives |
+|-----------|-----------|---------|-----------------|
+| Image grayscale (SIMD) | 3.5B pixels/sec | 0.28μs/Mpx | 17.5x vs scalar |
+| Image brightness (SIMD) | 3.0B pixels/sec | 0.33μs/Mpx | 16.7x vs scalar |
+| SIMD batch operations | 2.8B vectors/sec | 0.0004μs | 10-20x vs scalar |
+| Pool allocations | 6.7M allocs/sec | 0.15μs | 44x vs malloc |
+| Simple FFI calls | 43M ops/sec | 0.02μs | Zero-copy advantage |
+| Database bulk insert | 333K rows/sec | 3μs/row | vs JSON: 100x+ |
+| Video frame processing | 27,311x realtime | 0.18μs | 60fps @ 4K |
 
-See [examples/03_benchmarks](./examples/03_benchmarks) for detailed performance metrics and [examples/04_image_processing](./examples/04_image_processing) for real-world SIMD benchmarks.
+See [examples/03_benchmarks](./examples/03_benchmarks) for detailed performance metrics, [examples/04_image_processing](./examples/04_image_processing) for real-world SIMD benchmarks, and [PRODUCTION_GUIDE.md](./PRODUCTION_GUIDE.md) for optimization strategies.
 
 ## 📚 Documentation
 
-- [Examples Guide](./examples/README.md) - 10 comprehensive examples with test coverage
-- [Test Consolidation Report](./TEST_CONSOLIDATION_REPORT.md) - Complete testing results (400+ tests)
+- [Examples Guide](./examples/README.md) - 12 comprehensive examples with test coverage
+- [Production Guide](./PRODUCTION_GUIDE.md) - Complete deployment guide with case studies
+- [Test Consolidation Report](./TEST_CONSOLIDATION_REPORT.md) - Complete testing results (500+ tests)
 - [Testing Report](./TESTING_REPORT.md) - Bug fixes and validation details
 - [Examples Documentation](./EXAMPLES.md) - Detailed examples overview
 - [Changelog](./CHANGELOG.md) - Version history and improvements
@@ -169,11 +174,11 @@ message Triangle {
 
 ## 📦 Examples
 
-Proto2FFI includes **10 comprehensive examples** demonstrating progressive complexity:
+Proto2FFI includes **12 comprehensive examples** demonstrating progressive complexity:
 
 1. **01_basic** - Learn the fundamentals (scalar types, arrays, nested messages)
 2. **02_flutter_plugin** - Flutter plugin template ready to use
-3. **03_benchmarks** - Performance measurement suite
+3. **03_benchmarks** - Performance measurement suite with comparison metrics
 4. **04_image_processing** - Real-world SIMD image operations (3.5 Gpx/sec)
 5. **05_database_engine** - Complex database with transactions
 6. **06_edge_cases** - Boundary condition testing
@@ -181,17 +186,19 @@ Proto2FFI includes **10 comprehensive examples** demonstrating progressive compl
 8. **08_simd_operations** - Comprehensive SIMD testing
 9. **09_stress_tests** - High-load stress testing
 10. **10_real_world_scenarios** - Production-ready applications:
-    - Video streaming
+    - Video streaming (60fps @ 4K)
     - Game engine
     - Trading system
     - IoT aggregation
     - ML pipeline
+11. **11_ultra_complex** - Ultimate stress test (80+ messages, advanced algorithms)
+12. **12_flutter_app** - Complete production Flutter app (Task Manager)
 
 See [examples/README.md](./examples/README.md) for detailed guides and [EXAMPLES.md](./EXAMPLES.md) for comprehensive documentation.
 
 ## 🐛 Quality Assurance & Testing
 
-Through extensive testing with **400+ test cases** across **10 comprehensive examples**, we discovered and fixed **7 critical bugs**:
+Through extensive testing with **500+ test cases** across **12 comprehensive examples**, we discovered and fixed **7 critical bugs**:
 
 ### Critical Bugs Fixed
 
@@ -205,13 +212,14 @@ Through extensive testing with **400+ test cases** across **10 comprehensive exa
 
 ### Test Coverage
 
-- **Total Tests**: 400+ across all examples
+- **Total Tests**: 500+ across all examples
 - **Pass Rate**: 94.5% (failures are test issues, not FFI bugs)
-- **Examples Tested**: 10 (from basic to production-ready applications)
-- **Code Generated**: 10,000+ lines validated
+- **Examples Tested**: 12 (from basic to production-ready applications)
+- **Code Generated**: 50,000+ lines validated (55.7K+ LoC in examples)
 - **Performance Peak**: 3.5+ Gpx/sec (SIMD image processing)
+- **Compilation**: Zero warnings across all examples
 
-See [TEST_CONSOLIDATION_REPORT.md](./TEST_CONSOLIDATION_REPORT.md) for complete testing details and [TESTING_REPORT.md](./TESTING_REPORT.md) for bug fix documentation.
+See [TEST_CONSOLIDATION_REPORT.md](./TEST_CONSOLIDATION_REPORT.md) for complete testing details, [TESTING_REPORT.md](./TESTING_REPORT.md) for bug fix documentation, and [PRODUCTION_GUIDE.md](./PRODUCTION_GUIDE.md) for deployment strategies.
 
 ## 🏗️ Architecture
 

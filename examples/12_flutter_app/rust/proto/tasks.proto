@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package task_manager;
+
+message Task {
+    uint64 id = 1;
+    string title = 2;
+    string description = 3;
+    uint32 priority = 4;
+    bool completed = 5;
+    uint64 created_at = 6;
+    uint64 updated_at = 7;
+    repeated string tags = 8;
+}
+
+message TaskFilter {
+    bool filter_by_completed = 1;
+    bool completed_value = 2;
+    bool filter_by_priority = 3;
+    uint32 min_priority = 4;
+    uint32 max_priority = 5;
+    repeated string tags = 6;
+}
+
+message TaskStats {
+    uint64 total_tasks = 1;
+    uint64 completed_tasks = 2;
+    uint64 pending_tasks = 3;
+    uint64 high_priority_tasks = 4;
+    double completion_rate = 5;
+    uint64 avg_completion_time_ms = 6;
+    uint64 total_memory_used = 7;
+    uint64 pool_allocations = 8;
+}
+
+message BatchTaskRequest {
+    repeated Task tasks = 1;
+}
+
+message BatchTaskResponse {
+    repeated uint64 task_ids = 1;
+    uint64 success_count = 2;
+    uint64 error_count = 3;
+}
+
+message PerformanceMetrics {
+    uint64 operation_duration_ns = 1;
+    uint64 memory_allocated_bytes = 2;
+    uint64 pool_hits = 3;
+    uint64 pool_misses = 4;
+    double cpu_usage_percent = 5;
+}
+
+message TaskSearchRequest {
+    string query = 1;
+    uint32 limit = 2;
+    uint32 offset = 3;
+}
+
+message TaskSearchResponse {
+    repeated Task tasks = 1;
+    uint64 total_matches = 2;
+    uint64 search_time_us = 3;
+}

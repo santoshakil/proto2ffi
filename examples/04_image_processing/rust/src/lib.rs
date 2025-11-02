@@ -2,7 +2,6 @@ mod generated;
 pub use generated::*;
 
 use std::sync::Mutex;
-use std::time::Instant;
 
 // Global statistics
 static PERF_METRICS: Mutex<PerformanceMetrics> = Mutex::new(PerformanceMetrics {

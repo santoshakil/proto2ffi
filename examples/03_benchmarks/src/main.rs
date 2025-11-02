@@ -7,6 +7,20 @@ use std::time::Instant;
 mod generated;
 use generated::*;
 
+mod comparisons;
+mod latency_analysis;
+mod memory_analysis;
+mod cache_analysis;
+mod contention_analysis;
+mod statistical_analysis;
+
+use comparisons::{ComparisonBenchmarks, ComparisonResult};
+use latency_analysis::{LatencyBenchmarks, LatencyDistribution};
+use memory_analysis::{MemoryBenchmarks, MemoryOverhead, MemoryBenchmarkResult};
+use cache_analysis::{CacheAnalysis, CacheEfficiencyResult};
+use contention_analysis::{ContentionBenchmarks, ContentionResult};
+use statistical_analysis::StatisticalAnalysis;
+
 #[derive(Serialize, Deserialize, Clone)]
 struct BenchmarkResult {
     name: String,
@@ -157,7 +171,7 @@ impl BenchmarkSuite {
 
 fn main() {
     println!("Proto2FFI Comprehensive Benchmark Suite\n");
-    println!("Testing: Social Media Schema (with pool allocation)\n");
+    println!("Testing: Social Media Schema (with advanced analysis)\n");
 
     let mut suite = BenchmarkSuite::new();
 
@@ -168,10 +182,42 @@ fn main() {
     run_cache_performance_benchmarks(&mut suite);
     run_throughput_benchmarks(&mut suite);
 
+    let comparison_results = run_comparison_benchmarks();
+    let latency_distributions = LatencyBenchmarks::run_all();
+    let memory_overhead = MemoryBenchmarks::run_overhead_analysis();
+    let memory_patterns = MemoryBenchmarks::run_allocation_patterns();
+    let cache_results = CacheAnalysis::run_all();
+    let contention_results = ContentionBenchmarks::run_all();
+
     fs::create_dir_all("results").ok();
     suite.report(Path::new("results/benchmarks.json"));
 
-    generate_html_report(&suite.results);
+    generate_advanced_reports(
+        &suite.results,
+        &comparison_results,
+        &latency_distributions,
+        &memory_overhead,
+        &memory_patterns,
+        &cache_results,
+        &contention_results,
+    );
+}
+
+fn run_comparison_benchmarks() -> Vec<ComparisonResult> {
+    let mut results = Vec::new();
+
+    println!("\n=== COMPARISON BENCHMARKS ===\n");
+
+    results.extend(ComparisonBenchmarks::run_proto2ffi_vs_native_dart());
+    results.extend(ComparisonBenchmarks::run_proto2ffi_vs_json());
+    results.extend(ComparisonBenchmarks::run_proto2ffi_vs_bincode());
+
+    for result in &results {
+        println!("{}: {:.0} ops/sec, {:.2} ns/op",
+            result.name, result.ops_per_sec, result.latency_ns);
+    }
+
+    results
 }
 
 
@@ -661,7 +707,116 @@ fn run_throughput_benchmarks(suite: &mut BenchmarkSuite) {
     );
 }
 
-fn generate_html_report(results: &[BenchmarkResult]) {
+fn generate_advanced_reports(
+    baseline: &[BenchmarkResult],
+    comparisons: &[ComparisonResult],
+    latency: &[LatencyDistribution],
+    memory_overhead: &[MemoryOverhead],
+    memory_patterns: &[MemoryBenchmarkResult],
+    cache: &[CacheEfficiencyResult],
+    contention: &[ContentionResult],
+) {
+    save_json_results(baseline, comparisons, latency, memory_overhead, memory_patterns, cache, contention);
+    generate_advanced_html_report(baseline, comparisons, latency, cache, contention);
+    generate_statistical_analysis(baseline, comparisons);
+    generate_recommendations();
+}
+
+fn save_json_results(
+    baseline: &[BenchmarkResult],
+    comparisons: &[ComparisonResult],
+    latency: &[LatencyDistribution],
+    memory_overhead: &[MemoryOverhead],
+    memory_patterns: &[MemoryBenchmarkResult],
+    cache: &[CacheEfficiencyResult],
+    contention: &[ContentionResult],
+) {
+    #[derive(Serialize)]
+    struct AllResults {
+        baseline: Vec<BenchmarkResult>,
+        comparisons: Vec<ComparisonResult>,
+        latency_distributions: Vec<LatencyDistribution>,
+        memory_overhead: Vec<MemoryOverhead>,
+        memory_patterns: Vec<MemoryBenchmarkResult>,
+        cache_efficiency: Vec<CacheEfficiencyResult>,
+        contention: Vec<ContentionResult>,
+    }
+
+    let all = AllResults {
+        baseline: baseline.to_vec(),
+        comparisons: comparisons.to_vec(),
+        latency_distributions: latency.to_vec(),
+        memory_overhead: memory_overhead.to_vec(),
+        memory_patterns: memory_patterns.to_vec(),
+        cache_efficiency: cache.to_vec(),
+        contention: contention.to_vec(),
+    };
+
+    let json = serde_json::to_string_pretty(&all).unwrap();
+    fs::write("results/advanced_benchmarks.json", json).ok();
+    println!("\nAdvanced results saved to: results/advanced_benchmarks.json");
+}
+
+fn generate_statistical_analysis(baseline: &[BenchmarkResult], comparisons: &[ComparisonResult]) {
+    println!("\n=== STATISTICAL ANALYSIS ===\n");
+
+    let proto2ffi_ops: Vec<f64> = baseline.iter()
+        .filter(|r| r.category == "allocation")
+        .map(|r| r.ops_per_sec)
+        .collect();
+
+    if !proto2ffi_ops.is_empty() {
+        let summary = StatisticalAnalysis::calculate_summary("Proto2FFI Allocation", &proto2ffi_ops);
+        StatisticalAnalysis::print_summary(&summary);
+    }
+
+    let json_ops: Vec<f64> = comparisons.iter()
+        .filter(|r| r.category == "comparison_json")
+        .map(|r| r.ops_per_sec)
+        .collect();
+
+    if !json_ops.is_empty() {
+        let summary = StatisticalAnalysis::calculate_summary("JSON Serialization", &json_ops);
+        StatisticalAnalysis::print_summary(&summary);
+    }
+
+    if !proto2ffi_ops.is_empty() && !json_ops.is_empty() {
+        let proto2ffi_avg = proto2ffi_ops.iter().sum::<f64>() / proto2ffi_ops.len() as f64;
+        let json_avg = json_ops.iter().sum::<f64>() / json_ops.len() as f64;
+        let proto2ffi_lat = 1_000_000_000.0 / proto2ffi_avg;
+        let json_lat = 1_000_000_000.0 / json_avg;
+
+        let comparison = StatisticalAnalysis::compare_performance(
+            "Proto2FFI vs JSON",
+            proto2ffi_avg,
+            proto2ffi_lat,
+            json_avg,
+            json_lat,
+        );
+        StatisticalAnalysis::print_comparison(&comparison);
+    }
+}
+
+fn generate_recommendations() {
+    println!("\n=== PERFORMANCE RECOMMENDATIONS ===\n");
+
+    let recommendations = StatisticalAnalysis::generate_recommendations();
+    for rec in recommendations {
+        StatisticalAnalysis::print_recommendation(&rec);
+    }
+
+    let json = serde_json::to_string_pretty(&StatisticalAnalysis::generate_recommendations()).unwrap();
+    fs::write("results/recommendations.json", json).ok();
+    println!("\nRecommendations saved to: results/recommendations.json");
+}
+
+fn generate_advanced_html_report(
+    baseline: &[BenchmarkResult],
+    comparisons: &[ComparisonResult],
+    latency: &[LatencyDistribution],
+    cache: &[CacheEfficiencyResult],
+    contention: &[ContentionResult],
+) {
     let html = format!(r#"
 <!DOCTYPE html>
 <html>
@@ -909,17 +1064,108 @@ fn generate_html_report(results: &[BenchmarkResult]) {
 </body>
 </html>
 "#,
-        results.len(),
-        results.iter().map(|r| r.ops_per_sec).sum::<f64>() / results.len() as f64,
-        results.iter().map(|r| r.latency_ns).sum::<f64>() / results.len() as f64,
-        results.iter().map(|r| r.throughput_mb_s).sum::<f64>() / results.len() as f64,
-        results.iter().map(|r| format!(
+        baseline.len(),
+        baseline.iter().map(|r| r.ops_per_sec).sum::<f64>() / baseline.len() as f64,
+        baseline.iter().map(|r| r.latency_ns).sum::<f64>() / baseline.len() as f64,
+        baseline.iter().map(|r| r.throughput_mb_s).sum::<f64>() / baseline.len() as f64,
+        baseline.iter().map(|r| format!(
             "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{:.0}</td><td>{:.2}</td><td>{:.2}</td></tr>",
             r.name, r.category, r.schema, r.message_type, r.message_size_bytes, r.ops_per_sec, r.latency_ns, r.throughput_mb_s
         )).collect::<String>(),
-        serde_json::to_string(results).unwrap()
+        serde_json::to_string(baseline).unwrap()
     );
 
-    fs::write("results/benchmark_report.html", html).ok();
-    println!("\nHTML report generated: results/benchmark_report.html");
+    fs::write("results/advanced_report.html", html).ok();
+    println!("\nAdvanced HTML report generated: results/advanced_report.html");
+
+    let simple_html = generate_simple_comparison_table(baseline, comparisons, latency, cache, contention);
+    fs::write("results/comparison_summary.html", simple_html).ok();
+    println!("Comparison summary generated: results/comparison_summary.html");
+}
+
+fn generate_simple_comparison_table(
+    baseline: &[BenchmarkResult],
+    comparisons: &[ComparisonResult],
+    latency: &[LatencyDistribution],
+    cache: &[CacheEfficiencyResult],
+    contention: &[ContentionResult],
+) -> String {
+    format!(r#"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Proto2FFI Performance Comparison Summary</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }}
+        .container {{ max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }}
+        h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
+        h2 {{ color: #555; margin-top: 40px; border-bottom: 2px solid #ddd; padding-bottom: 8px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background-color: #4CAF50; color: white; }}
+        tr:hover {{ background-color: #f5f5f5; }}
+        .winner {{ color: #4CAF50; font-weight: bold; }}
+        .metric {{ display: inline-block; margin: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px; min-width: 200px; }}
+        .metric-value {{ font-size: 32px; font-weight: bold; color: #4CAF50; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Proto2FFI Performance Comparison Summary</h1>
+
+        <h2>Baseline Performance (Proto2FFI)</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Category</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Throughput (MB/s)</th></tr>
+            {}
+        </table>
+
+        <h2>Comparison Benchmarks</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Category</th><th>Ops/Sec</th><th>Latency (ns)</th></tr>
+            {}
+        </table>
+
+        <h2>Latency Distribution (p50/p95/p99)</h2>
+        <table>
+            <tr><th>Benchmark</th><th>p50</th><th>p95</th><th>p99</th><th>p99.9</th><th>StdDev</th></tr>
+            {}
+        </table>
+
+        <h2>Cache Efficiency</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Bandwidth (MB/s)</th><th>Cache Util %</th></tr>
+            {}
+        </table>
+
+        <h2>Contention & Scalability</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Threads</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Overhead %</th></tr>
+            {}
+        </table>
+    </div>
+</body>
+</html>
+"#,
+        baseline.iter().take(10).map(|r| format!(
+            "<tr><td>{}</td><td>{}</td><td>{:.0}</td><td>{:.2}</td><td>{:.2}</td></tr>",
+            r.name, r.category, r.ops_per_sec, r.latency_ns, r.throughput_mb_s
+        )).collect::<String>(),
+        comparisons.iter().map(|r| format!(
+            "<tr><td>{}</td><td>{}</td><td>{:.0}</td><td>{:.2}</td></tr>",
+            r.name, r.category, r.ops_per_sec, r.latency_ns
+        )).collect::<String>(),
+        latency.iter().map(|r| format!(
+            "<tr><td>{}</td><td>{:.2}</td><td>{:.2}</td><td>{:.2}</td><td>{:.2}</td><td>{:.2}</td></tr>",
+            r.name, r.p50_ns, r.p95_ns, r.p99_ns, r.p999_ns, r.stddev_ns
+        )).collect::<String>(),
+        cache.iter().map(|r| format!(
+            "<tr><td>{}</td><td>{:.0}</td><td>{:.2}</td><td>{:.2}</td><td>{:.2}</td></tr>",
+            r.name, r.ops_per_sec, r.latency_ns, r.bandwidth_mb_s, r.cache_line_utilization
+        )).collect::<String>(),
+        contention.iter().map(|r| format!(
+            "<tr><td>{}</td><td>{}</td><td>{:.0}</td><td>{:.2}</td><td>{:.2}</td></tr>",
+            r.name, r.threads, r.ops_per_sec, r.avg_latency_ns, r.contention_overhead_percent
+        )).collect::<String>()
+    )
 }
