@@ -1,0 +1,17 @@
+[package]
+name = "concurrent_pools"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+once_cell = "1.19"
+
+[dev-dependencies]
+
+[lib]
+crate-type = ["cdylib", "rlib"]

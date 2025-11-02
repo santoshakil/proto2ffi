@@ -1,9 +1,26 @@
 use crate::error::Result;
 use crate::layout::{Layout, MessageLayout, EnumLayout};
 use quote::{quote, format_ident};
-use proc_macro2::TokenStream;
+use proc_macro2::{TokenStream, Ident, Span};
 use std::fs;
 use std::path::Path;
+
+fn escape_rust_keyword(name: &str) -> Ident {
+    const RUST_KEYWORDS: &[&str] = &[
+        "as", "break", "const", "continue", "crate", "else", "enum", "extern",
+        "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
+        "move", "mut", "pub", "ref", "return", "self", "Self", "static", "struct",
+        "super", "trait", "true", "type", "unsafe", "use", "where", "while",
+        "async", "await", "dyn", "abstract", "become", "box", "do", "final",
+        "macro", "override", "priv", "typeof", "unsized", "virtual", "yield", "try",
+    ];
+
+    if RUST_KEYWORDS.contains(&name) {
+        Ident::new_raw(name, Span::call_site())
+    } else {
+        format_ident!("{}", name)
+    }
+}
 
 pub fn generate_rust(layout: &Layout, output_dir: &Path) -> Result<()> {
     fs::create_dir_all(output_dir)?;
@@ -14,6 +31,7 @@ pub fn generate_rust(layout: &Layout, output_dir: &Path) -> Result<()> {
         #![allow(dead_code)]
         #![allow(non_camel_case_types)]
         #![allow(non_snake_case)]
+        #![allow(unused_imports)]
 
         use std::mem;
         use std::slice;
@@ -52,7 +70,8 @@ fn generate_enum(enum_layout: &EnumLayout) -> Result<TokenStream> {
     let name = format_ident!("{}", enum_layout.name);
     let variants: Vec<_> = enum_layout.variants.iter().map(|(var_name, value)| {
         let variant = format_ident!("{}", var_name);
-        quote! { #variant = #value }
+        let val = proc_macro2::Literal::u32_unsuffixed(*value as u32);
+        quote! { #variant = #val }
     }).collect();
 
     Ok(quote! {
@@ -76,7 +95,7 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
             fields.push(quote! { pub #count_field: u32 });
         }
 
-        let field_name = format_ident!("{}", field.name);
+        let field_name = escape_rust_keyword(&field.name);
         let field_type = parse_rust_type(&field.rust_type);
         fields.push(quote! { pub #field_name: #field_type });
     }
@@ -99,7 +118,7 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
     for field in &message.fields {
         if field.repeated && field.max_count.is_some() {
-            let field_name = format_ident!("{}", field.name);
+            let field_name = escape_rust_keyword(&field.name);
             let count_field = format_ident!("{}_count", field.name);
             let max_count = proc_macro2::Literal::usize_unsuffixed(field.max_count.unwrap());
 

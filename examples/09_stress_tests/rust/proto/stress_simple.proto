@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package stress;
+
+message Level10 {
+  int32 value = 1;
+  int32 depth = 2;
+}
+
+message Level9 {
+  Level10 next = 1;
+  repeated int32 data = 2;
+}
+
+message Level8 {
+  Level9 next = 1;
+  repeated double values = 2;
+}
+
+message Level7 {
+  Level8 next = 1;
+  repeated Level10 items = 2;
+}
+
+message Level6 {
+  Level7 next = 1;
+  repeated int64 ids = 2;
+}
+
+message Level5 {
+  Level6 next = 1;
+  repeated Level9 batch = 2;
+}
+
+message Level4 {
+  Level5 next = 1;
+  repeated float measurements = 2;
+}
+
+message Level3 {
+  Level4 next = 1;
+  repeated Level8 collection = 2;
+}
+
+message Level2 {
+  Level3 next = 1;
+  repeated bool flags = 2;
+}
+
+message Level1 {
+  Level2 next = 1;
+  repeated Level7 cascade = 2;
+}
+
+message DeepNestingRoot {
+  Level1 start = 1;
+  int64 test_id = 2;
+  int64 timestamp = 3;
+}
+
+message WideMessage {
+  int32 field_001 = 1;
+  int32 field_002 = 2;
+  int32 field_003 = 3;
+  int32 field_004 = 4;
+  int32 field_005 = 5;
+  int64 field_006 = 6;
+  int64 field_007 = 7;
+  int64 field_008 = 8;
+  int64 field_009 = 9;
+  int64 field_010 = 10;
+  double field_011 = 11;
+  double field_012 = 12;
+  double field_013 = 13;
+  double field_014 = 14;
+  double field_015 = 15;
+  float field_016 = 16;
+  float field_017 = 17;
+  float field_018 = 18;
+  float field_019 = 19;
+  float field_020 = 20;
+  bool field_021 = 21;
+  bool field_022 = 22;
+  bool field_023 = 23;
+  bool field_024 = 24;
+  bool field_025 = 25;
+  repeated int32 field_026 = 26;
+  repeated int64 field_027 = 27;
+  repeated double field_028 = 28;
+  repeated float field_029 = 29;
+  repeated bool field_030 = 30;
+}
+
+message HugeMessage {
+  repeated int32 payload_1k = 1;
+  repeated int64 payload_2k = 2;
+  repeated double payload_3k = 3;
+  repeated float payload_4k = 4;
+  WideMessage metadata = 5;
+}
+
+message MassiveArray {
+  repeated int32 numbers = 1;
+  repeated double values = 2;
+  repeated int64 ids = 3;
+}
+
+message RecursiveNode {
+  int64 node_id = 1;
+  repeated RecursiveNode children = 2;
+  int32 depth = 3;
+  int32 value = 4;
+}
+
+message ComplexGraph {
+  repeated RecursiveNode nodes = 1;
+  int32 node_count = 2;
+  int32 edge_count = 3;
+}
+
+message AllocationTest {
+  repeated int64 block_ids = 1;
+  int32 block_count = 2;
+  int32 total_size = 3;
+}
+
+message MixedComplexity {
+  DeepNestingRoot deep = 1;
+  WideMessage wide = 2;
+  HugeMessage huge = 3;
+  MassiveArray massive = 4;
+  RecursiveNode recursive = 5;
+  ComplexGraph graph = 6;
+  AllocationTest allocation = 7;
+}
+
+message StressTestSuite {
+  MixedComplexity mixed = 1;
+  repeated DeepNestingRoot deep_array = 2;
+  repeated WideMessage wide_array = 3;
+  repeated HugeMessage huge_array = 4;
+}

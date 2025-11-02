@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proto2FFI Benchmark Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 40px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .metric {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Proto2FFI Comprehensive Benchmark Results</h1>
+
+        <div class="summary">
+            <h2 style="color: white; border: none;">Summary Statistics</h2>
+            <div class="metric">
+                <div class="metric-value">25</div>
+                <div class="metric-label">Total Benchmarks</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">540166376</div>
+                <div class="metric-label">Avg Ops/Sec</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">114.86</div>
+                <div class="metric-label">Avg Latency (ns)</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">220264.38</div>
+                <div class="metric-label">Avg Throughput (MB/s)</div>
+            </div>
+        </div>
+
+        <h2>Performance by Category</h2>
+        <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+        </div>
+
+        <h2>Latency by Message Size</h2>
+        <div class="chart-container">
+            <canvas id="sizeChart"></canvas>
+        </div>
+
+        <h2>Throughput by Schema</h2>
+        <div class="chart-container">
+            <canvas id="throughputChart"></canvas>
+        </div>
+
+        <h2>Detailed Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Benchmark</th>
+                    <th>Category</th>
+                    <th>Schema</th>
+                    <th>Type</th>
+                    <th>Size (bytes)</th>
+                    <th>Ops/Sec</th>
+                    <th>Latency (ns)</th>
+                    <th>Throughput (MB/s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Post creation (large messages)</td><td>allocation</td><td>social_media</td><td>Post</td><td>5584</td><td>2325960</td><td>429.93</td><td>12386.48</td></tr><tr><td>Comment creation (medium messages)</td><td>allocation</td><td>social_media</td><td>Comment</td><td>2056</td><td>5349427</td><td>186.94</td><td>10488.91</td></tr><tr><td>Reaction batch processing (small messages)</td><td>allocation</td><td>social_media</td><td>Reaction</td><td>40</td><td>138878434</td><td>7.20</td><td>5297.79</td></tr><tr><td>NewsFeedItem SIMD scoring</td><td>simd</td><td>social_media</td><td>NewsFeedItem</td><td>56</td><td>81763341</td><td>12.23</td><td>4366.63</td></tr><tr><td>Message batch operations</td><td>allocation</td><td>social_media</td><td>Message</td><td>4040</td><td>2032669</td><td>491.96</td><td>7831.56</td></tr><tr><td>Stack allocation - small struct</td><td>memory</td><td>generic</td><td>Reaction</td><td>40</td><td>1267440456</td><td>0.79</td><td>48349.02</td></tr><tr><td>Stack allocation - medium struct</td><td>memory</td><td>generic</td><td>UserProfile</td><td>656</td><td>141326097</td><td>7.08</td><td>88415.07</td></tr><tr><td>Stack allocation - large struct</td><td>memory</td><td>generic</td><td>Post</td><td>5584</td><td>17681903</td><td>56.55</td><td>94161.74</td></tr><tr><td>Heap allocation - small</td><td>memory</td><td>generic</td><td>Reaction</td><td>40</td><td>16120171</td><td>62.03</td><td>614.94</td></tr><tr><td>Heap allocation - large</td><td>memory</td><td>generic</td><td>Post</td><td>5584</td><td>1887365</td><td>529.84</td><td>10050.82</td></tr><tr><td>Pre-allocated vector</td><td>memory</td><td>generic</td><td>u64</td><td>8</td><td>1348072257</td><td>0.74</td><td>10284.98</td></tr><tr><td>FFI call overhead - size query</td><td>ffi</td><td>generic</td><td>UserProfile</td><td>656</td><td>3703304570</td><td>0.27</td><td>2316825.67</td></tr><tr><td>FFI call overhead - alignment query</td><td>ffi</td><td>generic</td><td>UserProfile</td><td>656</td><td>3700848568</td><td>0.27</td><td>2315289.17</td></tr><tr><td>FFI roundtrip - small struct</td><td>ffi</td><td>generic</td><td>Reaction</td><td>40</td><td>75207524</td><td>13.30</td><td>2868.94</td></tr><tr><td>FFI roundtrip - large struct</td><td>ffi</td><td>generic</td><td>Post</td><td>5584</td><td>47443011</td><td>21.08</td><td>252649.09</td></tr><tr><td>Pool allocation pattern - Posts</td><td>pool</td><td>social_media</td><td>Post</td><td>5584</td><td>2311845</td><td>432.56</td><td>12311.31</td></tr><tr><td>Pool allocation pattern - Comments</td><td>pool</td><td>social_media</td><td>Comment</td><td>2056</td><td>6482205</td><td>154.27</td><td>12710.01</td></tr><tr><td>Pool reuse pattern - Reactions</td><td>pool</td><td>social_media</td><td>Reaction</td><td>40</td><td>2106740094</td><td>0.47</td><td>80365.76</td></tr><tr><td>Pool allocation pattern - Notifications</td><td>pool</td><td>social_media</td><td>Notification</td><td>304</td><td>72693342</td><td>13.76</td><td>21075.04</td></tr><tr><td>Sequential access - small structs</td><td>cache</td><td>generic</td><td>Reaction</td><td>40</td><td>398558652</td><td>2.51</td><td>15203.81</td></tr><tr><td>Random access - small structs</td><td>cache</td><td>generic</td><td>Reaction</td><td>40</td><td>311526480</td><td>3.21</td><td>11883.79</td></tr><tr><td>Sequential access - large structs</td><td>cache</td><td>generic</td><td>Post</td><td>5584</td><td>18862017</td><td>53.02</td><td>100446.23</td></tr><tr><td>Social media feed generation</td><td>throughput</td><td>social_media</td><td>NewsFeedItem</td><td>56</td><td>21447146</td><td>46.63</td><td>1145.40</td></tr><tr><td>Batch post updates</td><td>throughput</td><td>social_media</td><td>Post</td><td>5584</td><td>12036591</td><td>83.08</td><td>64098.67</td></tr><tr><td>Batch comment processing</td><td>throughput</td><td>social_media</td><td>Comment</td><td>2056</td><td>3819287</td><td>261.83</td><td>7488.68</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const results = [{"name":"Post creation (large messages)","category":"allocation","schema":"social_media","message_type":"Post","message_size_bytes":5584,"operations":50000,"duration_micros":21496,"ops_per_sec":2325960.0400065123,"latency_ns":429.93,"throughput_mb_s":12386.47543277394,"memory_allocated_mb":266.265869140625},{"name":"Comment creation (medium messages)","category":"allocation","schema":"social_media","message_type":"Comment","message_size_bytes":2056,"operations":500000,"duration_micros":93467,"ops_per_sec":5349426.805708112,"latency_ns":186.935916,"throughput_mb_s":10488.912117515449,"memory_allocated_mb":980.377197265625},{"name":"Reaction batch processing (small messages)","category":"allocation","schema":"social_media","message_type":"Reaction","message_size_bytes":40,"operations":1000000,"duration_micros":7200,"ops_per_sec":138878434.4289638,"latency_ns":7.200542,"throughput_mb_s":5297.791840704492,"memory_allocated_mb":38.14697265625},{"name":"NewsFeedItem SIMD scoring","category":"simd","schema":"social_media","message_type":"NewsFeedItem","message_size_bytes":56,"operations":100000,"duration_micros":1223,"ops_per_sec":81763340.91552049,"latency_ns":12.23042,"throughput_mb_s":4366.633502263209,"memory_allocated_mb":5.340576171875},{"name":"Message batch operations","category":"allocation","schema":"social_media","message_type":"Message","message_size_bytes":4040,"operations":500000,"duration_micros":245981,"ops_per_sec":2032669.4041519908,"latency_ns":491.963916,"throughput_mb_s":7831.558602117579,"memory_allocated_mb":1926.422119140625},{"name":"Stack allocation - small struct","category":"memory","schema":"generic","message_type":"Reaction","message_size_bytes":40,"operations":10000000,"duration_micros":7889,"ops_per_sec":1267440455.964239,"latency_ns":0.7889917,"throughput_mb_s":48349.016417092855,"memory_allocated_mb":381.4697265625},{"name":"Stack allocation - medium struct","category":"memory","schema":"generic","message_type":"UserProfile","message_size_bytes":656,"operations":1000000,"duration_micros":7075,"ops_per_sec":141326096.68344396,"latency_ns":7.075834,"throughput_mb_s":88415.06903108525,"memory_allocated_mb":625.6103515625},{"name":"Stack allocation - large struct","category":"memory","schema":"generic","message_type":"Post","message_size_bytes":5584,"operations":100000,"duration_micros":5655,"ops_per_sec":17681902.572716825,"latency_ns":56.555,"throughput_mb_s":94161.74313168597,"memory_allocated_mb":532.53173828125},{"name":"Heap allocation - small","category":"memory","schema":"generic","message_type":"Reaction","message_size_bytes":40,"operations":1000000,"duration_micros":62034,"ops_per_sec":16120170.58428993,"latency_ns":62.034083,"throughput_mb_s":614.9357064929935,"memory_allocated_mb":38.14697265625},{"name":"Heap allocation - large","category":"memory","schema":"generic","message_type":"Post","message_size_bytes":5584,"operations":50000,"duration_micros":26491,"ops_per_sec":1887365.2147568709,"latency_ns":529.83916,"throughput_mb_s":10050.81878586041,"memory_allocated_mb":266.265869140625},{"name":"Pre-allocated vector","category":"memory","schema":"generic","message_type":"u64","message_size_bytes":8,"operations":10000000,"duration_micros":7418,"ops_per_sec":1348072256.6729577,"latency_ns":0.7418,"throughput_mb_s":10284.97510279051,"memory_allocated_mb":76.2939453125},{"name":"FFI call overhead - size query","category":"ffi","schema":"generic","message_type":"UserProfile","message_size_bytes":656,"operations":10000000,"duration_micros":2700,"ops_per_sec":3703304569.76674,"latency_ns":0.2700291,"throughput_mb_s":2316825.673834783,"memory_allocated_mb":6256.103515625},{"name":"FFI call overhead - alignment query","category":"ffi","schema":"generic","message_type":"UserProfile","message_size_bytes":656,"operations":10000000,"duration_micros":2702,"ops_per_sec":3700848567.5680575,"latency_ns":0.2702083,"throughput_mb_s":2315289.1734358273,"memory_allocated_mb":6256.103515625},{"name":"FFI roundtrip - small struct","category":"ffi","schema":"generic","message_type":"Reaction","message_size_bytes":40,"operations":1000000,"duration_micros":13296,"ops_per_sec":75207523.8810211,"latency_ns":13.296542,"throughput_mb_s":2868.9393570335806,"memory_allocated_mb":38.14697265625},{"name":"FFI roundtrip - large struct","category":"ffi","schema":"generic","message_type":"Post","message_size_bytes":5584,"operations":100000,"duration_micros":2107,"ops_per_sec":47443011.45464069,"latency_ns":21.07792,"throughput_mb_s":252649.09359237063,"memory_allocated_mb":532.53173828125},{"name":"Pool allocation pattern - Posts","category":"pool","schema":"social_media","message_type":"Post","message_size_bytes":5584,"operations":50000,"duration_micros":21627,"ops_per_sec":2311844.736507496,"latency_ns":432.555,"throughput_mb_s":12311.306961686952,"memory_allocated_mb":266.265869140625},{"name":"Pool allocation pattern - Comments","category":"pool","schema":"social_media","message_type":"Comment","message_size_bytes":2056,"operations":500000,"duration_micros":77134,"ops_per_sec":6482204.727471908,"latency_ns":154.2685,"throughput_mb_s":12710.011405641786,"memory_allocated_mb":980.377197265625},{"name":"Pool reuse pattern - Reactions","category":"pool","schema":"social_media","message_type":"Reaction","message_size_bytes":40,"operations":1000000,"duration_micros":474,"ops_per_sec":2106740093.581395,"latency_ns":0.474667,"throughput_mb_s":80365.75674367504,"memory_allocated_mb":38.14697265625},{"name":"Pool allocation pattern - Notifications","category":"pool","schema":"social_media","message_type":"Notification","message_size_bytes":304,"operations":500000,"duration_micros":6878,"ops_per_sec":72693342.11856604,"latency_ns":13.756418,"throughput_mb_s":21075.035099071578,"memory_allocated_mb":144.95849609375},{"name":"Sequential access - small structs","category":"cache","schema":"generic","message_type":"Reaction","message_size_bytes":40,"operations":1000000,"duration_micros":2509,"ops_per_sec":398558652.48913825,"latency_ns":2.509041,"throughput_mb_s":15203.806018415004,"memory_allocated_mb":38.14697265625},{"name":"Random access - small structs","category":"cache","schema":"generic","message_type":"Reaction","message_size_bytes":40,"operations":100000,"duration_micros":321,"ops_per_sec":311526479.7507788,"latency_ns":3.21,"throughput_mb_s":11883.792104750779,"memory_allocated_mb":3.814697265625},{"name":"Sequential access - large structs","category":"cache","schema":"generic","message_type":"Post","message_size_bytes":5584,"operations":10000,"duration_micros":530,"ops_per_sec":18862016.80228457,"latency_ns":53.0166,"throughput_mb_s":100446.22595210746,"memory_allocated_mb":53.253173828125},{"name":"Social media feed generation","category":"throughput","schema":"social_media","message_type":"NewsFeedItem","message_size_bytes":56,"operations":100000,"duration_micros":4662,"ops_per_sec":21447146.189110212,"latency_ns":46.62625,"throughput_mb_s":1145.401178922817,"memory_allocated_mb":5.340576171875},{"name":"Batch post updates","category":"throughput","schema":"social_media","message_type":"Post","message_size_bytes":5584,"operations":50000,"duration_micros":4154,"ops_per_sec":12036591.23736158,"latency_ns":83.08,"throughput_mb_s":64098.66854613024,"memory_allocated_mb":266.265869140625},{"name":"Batch comment processing","category":"throughput","schema":"social_media","message_type":"Comment","message_size_bytes":2056,"operations":200000,"duration_micros":52365,"ops_per_sec":3819287.217120673,"latency_ns":261.82896,"throughput_mb_s":7488.684194946388,"memory_allocated_mb":392.15087890625}];
+
+        const categoryData = {};
+        results.forEach(r => {
+            if (!categoryData[r.category]) categoryData[r.category] = [];
+            categoryData[r.category].push(r);
+        });
+
+        const categoryLabels = Object.keys(categoryData);
+        const categoryAvgOps = categoryLabels.map(cat => {
+            const ops = categoryData[cat].map(r => r.ops_per_sec);
+            return ops.reduce((a, b) => a + b, 0) / ops.length;
+        });
+
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'bar',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'Average Ops/Sec',
+                    data: categoryAvgOps,
+                    backgroundColor: 'rgba(76, 175, 80, 0.6)',
+                    borderColor: 'rgba(76, 175, 80, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Operations per Second' }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('sizeChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Latency vs Size',
+                    data: results.map(r => ({ x: r.message_size_bytes, y: r.latency_ns })),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'logarithmic',
+                        title: { display: true, text: 'Message Size (bytes)' }
+                    },
+                    y: {
+                        type: 'logarithmic',
+                        title: { display: true, text: 'Latency (ns)' }
+                    }
+                }
+            }
+        });
+
+        const schemaData = {};
+        results.forEach(r => {
+            if (!schemaData[r.schema]) schemaData[r.schema] = [];
+            schemaData[r.schema].push(r);
+        });
+
+        const schemaLabels = Object.keys(schemaData);
+        const schemaAvgThroughput = schemaLabels.map(schema => {
+            const throughputs = schemaData[schema].map(r => r.throughput_mb_s);
+            return throughputs.reduce((a, b) => a + b, 0) / throughputs.length;
+        });
+
+        new Chart(document.getElementById('throughputChart'), {
+            type: 'bar',
+            data: {
+                labels: schemaLabels,
+                datasets: [{
+                    label: 'Average Throughput (MB/s)',
+                    data: schemaAvgThroughput,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Throughput (MB/s)' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

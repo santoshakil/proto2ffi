@@ -47,6 +47,23 @@ pub fn parse_proto_string(content: &str) -> Result<ProtoFile> {
         }
     }
 
+    // Post-process: Convert Message fields to Enum fields if they reference enums
+    let enum_names: std::collections::HashSet<_> = proto_file
+        .enums
+        .iter()
+        .map(|e| e.name.as_str())
+        .collect();
+
+    for message in &mut proto_file.messages {
+        for field in &mut message.fields {
+            if let FieldType::Message(type_name) = &field.field_type {
+                if enum_names.contains(type_name.as_str()) {
+                    field.field_type = FieldType::Enum(type_name.clone());
+                }
+            }
+        }
+    }
+
     Ok(proto_file)
 }
 

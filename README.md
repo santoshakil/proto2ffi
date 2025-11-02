@@ -11,12 +11,14 @@ Proto2FFI generates high-performance, zero-copy FFI bindings between Dart and Ru
 ## ✨ Features
 
 - **🚀 Zero-Copy**: Direct memory sharing between Dart and Rust
-- **⚡ High Performance**: Millions of operations per second
+- **⚡ High Performance**: Billions of operations per second with SIMD
 - **🔒 Memory Safe**: Proper alignment and layout guarantees
 - **📦 Memory Pools**: Optional pooled allocation for hot paths
 - **🎯 SIMD Support**: Batch operations with AVX2/SSE acceleration
 - **🛠️ Type Safe**: Generated code is fully type-safe in both languages
 - **📝 Protocol Buffers**: Use familiar .proto files as schema
+- **✅ Production-Ready**: Extensively tested with 10 comprehensive examples
+- **🐛 Battle-Tested**: 6 critical bugs discovered and fixed
 
 ## 🚀 Quick Start
 
@@ -107,19 +109,21 @@ Proto2FFI achieves exceptional performance through zero-copy design:
 
 | Operation | Throughput | Latency |
 |-----------|-----------|---------|
-| Simple operations | 43M ops/sec | 0.02μs |
-| Pool allocations | 6.7M allocs/sec | 0.15μs |
+| Image grayscale (SIMD) | 3.5B pixels/sec | 0.28μs/Mpx |
+| Image brightness (SIMD) | 3.0B pixels/sec | 0.33μs/Mpx |
 | SIMD batch operations | 2.8B vectors/sec | 0.0004μs |
-| Physics updates | 77M updates/sec | 0.01μs |
+| Pool allocations | 6.7M allocs/sec | 0.15μs |
+| Simple FFI calls | 43M ops/sec | 0.02μs |
 
-See [benchmarks](./examples/benchmark_suite) for detailed performance metrics.
+See [examples/03_benchmarks](./examples/03_benchmarks) for detailed performance metrics and [examples/04_image_processing](./examples/04_image_processing) for real-world SIMD benchmarks.
 
 ## 📚 Documentation
 
-- [Getting Started Guide](./docs/getting_started.md)
-- [Architecture Overview](./docs/architecture.md)
-- [API Documentation](https://docs.rs/proto2ffi)
-- [Examples](./examples/)
+- [Examples Guide](./examples/README.md) - 10 comprehensive examples
+- [Testing Report](./TESTING_REPORT.md) - Bug fixes and validation
+- [Examples Documentation](./EXAMPLES.md) - Detailed examples overview
+- [Changelog](./CHANGELOG.md) - Version history and improvements
+- [API Documentation](https://docs.rs/proto2ffi) - Rust API reference
 
 ## 🎯 Advanced Features
 
@@ -161,6 +165,41 @@ message Triangle {
   repeated Vertex vertices = 1 [(proto2ffi.max_count) = 3];
 }
 ```
+
+## 📦 Examples
+
+Proto2FFI includes **10 comprehensive examples** demonstrating progressive complexity:
+
+1. **01_basic** - Learn the fundamentals (scalar types, arrays, nested messages)
+2. **02_flutter_plugin** - Flutter plugin template ready to use
+3. **03_benchmarks** - Performance measurement suite
+4. **04_image_processing** - Real-world SIMD image operations (3.5 Gpx/sec)
+5. **05_database_engine** - Complex database with transactions
+6. **06_edge_cases** - Boundary condition testing
+7. **07_concurrent_pools** - Thread-safe memory pool validation
+8. **08_simd_operations** - Comprehensive SIMD testing
+9. **09_stress_tests** - High-load stress testing
+10. **10_real_world_scenarios** - Production-ready applications:
+    - Video streaming
+    - Game engine
+    - Trading system
+    - IoT aggregation
+    - ML pipeline
+
+See [examples/README.md](./examples/README.md) for detailed guides and [EXAMPLES.md](./EXAMPLES.md) for comprehensive documentation.
+
+## 🐛 Quality Assurance
+
+During extensive testing, we discovered and fixed **6 critical bugs**:
+
+1. ✅ Enum value type mismatch (i32 vs u32)
+2. ✅ Dart enum syntax compatibility (Dart 3.0+)
+3. ✅ Array type annotations (ffi.Uint32 vs u32)
+4. ✅ Enum field representation in structs
+5. ✅ Array field accessibility (public vs private)
+6. ✅ Rust keyword escaping (r#type for reserved words)
+
+All bugs have been fixed and verified with comprehensive test suites. See [TESTING_REPORT.md](./TESTING_REPORT.md) for details.
 
 ## 🏗️ Architecture
 

@@ -38,10 +38,20 @@ pub fn generate_dart(layout: &Layout, output_dir: &Path) -> Result<()> {
 fn generate_dart_enum(enum_layout: &EnumLayout) -> Result<String> {
     let mut code = String::new();
 
+    // Dart 3.0+ enum syntax
     code.push_str(&format!("enum {} {{\n", enum_layout.name));
 
-    for (variant, value) in &enum_layout.variants {
-        code.push_str(&format!("  {}({}),\n", variant, value));
+    let variant_count = enum_layout.variants.len();
+    for (i, (variant, value)) in enum_layout.variants.iter().enumerate() {
+        code.push_str(&format!("  {}({})", variant, value));
+        if i < variant_count - 1 {
+            code.push_str(",");
+        } else {
+            code.push_str(";");
+        }
+        code.push_str(" // Value: ");
+        code.push_str(&value.to_string());
+        code.push_str("\n");
     }
 
     code.push_str("\n  const ");
@@ -74,7 +84,7 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
             code.push_str(&format!("  {}\n", field.dart_annotation));
 
             if field.dart_type == "String" || field.dart_type == "Uint8List" {
-                code.push_str(&format!("  external ffi.Array<ffi.Uint8> _{};\n\n", field.name));
+                code.push_str(&format!("  external ffi.Array<ffi.Uint8> {};\n\n", field.name));
             } else if field.repeated && field.max_count.is_some() {
                 let inner_type = field.rust_type
                     .trim_start_matches('[')
@@ -82,8 +92,19 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
                     .next()
                     .unwrap()
                     .trim();
-                code.push_str(&format!("  external ffi.Array<{}> _{};\n\n",
-                    rust_to_dart_struct_type(inner_type), field.name));
+
+                let dart_type = if inner_type.starts_with('[') {
+                    let base_type = inner_type.trim_start_matches('[')
+                        .split(';')
+                        .next()
+                        .unwrap()
+                        .trim();
+                    rust_to_dart_struct_type(base_type)
+                } else {
+                    rust_to_dart_struct_type(inner_type)
+                };
+
+                code.push_str(&format!("  external ffi.Array<{}> {};\n\n", dart_type, field.name));
             } else {
                 code.push_str(&format!("  external {} {};\n\n", field.dart_type, field.name));
             }
@@ -116,11 +137,11 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
 
 fn generate_string_getter(field_name: &str, max_len: usize) -> String {
     format!(
-        r#"  String get {} {{
+        r#"  String get {}_str {{
     final bytes = <int>[];
     for (int i = 0; i < {}; i++) {{
-      if (_{}[i] == 0) break;
-      bytes.add(_{}[i]);
+      if ({}[i] == 0) break;
+      bytes.add({}[i]);
     }}
     return String.fromCharCodes(bytes);
   }}
@@ -132,14 +153,14 @@ fn generate_string_getter(field_name: &str, max_len: usize) -> String {
 
 fn generate_string_setter(field_name: &str, max_len: usize) -> String {
     format!(
-        r#"  set {}(String value) {{
+        r#"  set {}_str(String value) {{
     final bytes = utf8.encode(value);
     final len = bytes.length < {} ? bytes.length : {};
     for (int i = 0; i < len; i++) {{
-      _{}[i] = bytes[i];
+      {}[i] = bytes[i];
     }}
     if (len < {}) {{
-      _{}[len] = 0;
+      {}[len] = 0;
     }}
   }}
 
@@ -156,10 +177,10 @@ fn generate_string_setter(field_name: &str, max_len: usize) -> String {
 fn generate_array_getter(field_name: &str, dart_type: &str) -> String {
     let inner_type = dart_type.trim_start_matches("List<").trim_end_matches('>');
     format!(
-        r#"  List<{}> get {} {{
+        r#"  List<{}> get {}_list {{
     return List.generate(
       {}_count,
-      (i) => _{}[i],
+      (i) => {}[i],
       growable: false,
     );
   }}
@@ -185,7 +206,7 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
     if ({}_count >= {}) {{
       throw Exception('{} array full');
     }}
-    _{}[{}_count] = item;
+    {}[{}_count] = item;
     {}_count++;
   }}
 
@@ -207,7 +228,7 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
     }}
     final idx = {}_count;
     {}_count++;
-    return _{}[idx];
+    return {}[idx];
   }}
 
 "#,
@@ -273,11 +294,16 @@ fn generate_bindings(layout: &Layout) -> Result<String> {
 
 fn rust_to_dart_struct_type(rust_type: &str) -> String {
     match rust_type {
-        "i32" | "u32" => "ffi.Int32",
-        "i64" | "u64" => "ffi.Int64",
+        "i32" => "ffi.Int32",
+        "u32" => "ffi.Uint32",
+        "i64" => "ffi.Int64",
+        "u64" => "ffi.Uint64",
         "f32" => "ffi.Float",
         "f64" => "ffi.Double",
         "u8" => "ffi.Uint8",
+        "i8" => "ffi.Int8",
+        "u16" => "ffi.Uint16",
+        "i16" => "ffi.Int16",
         custom => custom,
     }.to_string()
 }

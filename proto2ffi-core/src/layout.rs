@@ -215,20 +215,46 @@ fn get_type_info(
     if repeated {
         if let Some(count) = max_count {
             let array_size = base_size * count;
+            let (dart_ffi_type, dart_array_count) = if base_rust.starts_with('[') {
+                let inner_element = base_rust.trim_start_matches('[')
+                    .split(';')
+                    .next()
+                    .unwrap_or("u8")
+                    .trim();
+                let inner_count_str = base_rust.trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .split(';')
+                    .nth(1)
+                    .unwrap_or("1")
+                    .trim();
+                let inner_count: usize = inner_count_str.parse().unwrap_or(1);
+                (rust_to_dart_ffi_type(inner_element), count * inner_count)
+            } else {
+                (rust_to_dart_ffi_type(base_rust.trim_start_matches("external ")), count)
+            };
             Ok((
                 format!("[{}; {}]", base_rust, count),
                 format!("List<{}>", base_dart),
-                format!("@ffi.Array<{}>({})",
-                    base_rust.trim_start_matches("external "), count),
+                format!("@ffi.Array<{}>({})", dart_ffi_type, dart_array_count),
                 format!("{}[{}]", base_c, count),
                 array_size + 4,
                 base_align.max(4),
             ))
         } else {
+            let dart_ffi_type = if base_rust.starts_with('[') {
+                let inner_element = base_rust.trim_start_matches('[')
+                    .split(';')
+                    .next()
+                    .unwrap_or("u8")
+                    .trim();
+                rust_to_dart_ffi_type(inner_element)
+            } else {
+                rust_to_dart_ffi_type(base_rust.trim_start_matches("external "))
+            };
             Ok((
                 format!("*const {}", base_rust),
                 format!("List<{}>", base_dart),
-                format!("@ffi.Pointer<{}>", base_rust),
+                format!("external ffi.Pointer<{}>", dart_ffi_type),
                 format!("{}*", base_c),
                 16,
                 8,
@@ -241,6 +267,22 @@ fn get_type_info(
 
 fn align_up(offset: usize, alignment: usize) -> usize {
     (offset + alignment - 1) & !(alignment - 1)
+}
+
+fn rust_to_dart_ffi_type(rust_type: &str) -> String {
+    match rust_type {
+        "i32" => "ffi.Int32".to_string(),
+        "u32" => "ffi.Uint32".to_string(),
+        "i64" => "ffi.Int64".to_string(),
+        "u64" => "ffi.Uint64".to_string(),
+        "f32" => "ffi.Float".to_string(),
+        "f64" => "ffi.Double".to_string(),
+        "u8" => "ffi.Uint8".to_string(),
+        "i8" => "ffi.Int8".to_string(),
+        "u16" => "ffi.Uint16".to_string(),
+        "i16" => "ffi.Int16".to_string(),
+        custom => custom.to_string(),
+    }
 }
 
 pub fn optimize_for_cache(mut layout: Layout) -> Result<Layout> {

@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+enum ComponentType {
+    TRANSFORM = 0;
+    RIGIDBODY = 1;
+    COLLIDER = 2;
+    RENDERER = 3;
+    LIGHT = 4;
+    CAMERA = 5;
+    AUDIO_SOURCE = 6;
+    PARTICLE_SYSTEM = 7;
+}
+
+enum ColliderShape {
+    BOX = 0;
+    SPHERE = 1;
+    CAPSULE = 2;
+    MESH = 3;
+}
+
+enum LightType {
+    DIRECTIONAL = 0;
+    POINT = 1;
+    SPOT = 2;
+}
+
+message Vector3 {
+    option (proto2ffi.simd) = true;
+
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+message Quaternion {
+    option (proto2ffi.simd) = true;
+
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    float w = 4;
+}
+
+message Transform {
+    option (proto2ffi.pool_size) = 10000;
+    option (proto2ffi.simd) = true;
+
+    Vector3 position = 1;
+    Quaternion rotation = 2;
+    Vector3 scale = 3;
+    uint32 parent_entity = 4;
+    repeated uint32 children = 5 [(proto2ffi.max_count) = 64];
+}
+
+message RigidBody {
+    option (proto2ffi.pool_size) = 5000;
+    option (proto2ffi.simd) = true;
+
+    Vector3 velocity = 1;
+    Vector3 angular_velocity = 2;
+    float mass = 3;
+    float drag = 4;
+    float angular_drag = 5;
+    bool use_gravity = 6;
+    bool is_kinematic = 7;
+}
+
+message Collider {
+    option (proto2ffi.pool_size) = 5000;
+
+    ColliderShape shape = 1;
+    Vector3 center = 2;
+    Vector3 size = 3;
+    float radius = 4;
+    float height = 5;
+    bool is_trigger = 6;
+}
+
+message PhysicsState {
+    option (proto2ffi.pool_size) = 1000;
+
+    repeated uint32 entity_ids = 1 [(proto2ffi.max_count) = 1024];
+    repeated RigidBody bodies = 2 [(proto2ffi.max_count) = 1024];
+    uint32 body_count = 3;
+    uint64 simulation_time_us = 4;
+    uint32 collision_count = 5;
+}
+
+message Particle {
+    option (proto2ffi.simd) = true;
+
+    Vector3 position = 1;
+    Vector3 velocity = 2;
+    float lifetime = 3;
+    float size = 4;
+    uint32 color = 5;
+}
+
+message ParticleSystem {
+    option (proto2ffi.pool_size) = 500;
+
+    Vector3 emitter_position = 1;
+    repeated Particle particles = 2 [(proto2ffi.max_count) = 10000];
+    uint32 particle_count = 3;
+    float emission_rate = 4;
+    float particle_lifetime = 5;
+    Vector3 gravity = 6;
+    bool is_playing = 7;
+}
+
+message Entity {
+    option (proto2ffi.pool_size) = 10000;
+
+    uint32 entity_id = 1;
+    string name = 2 [(proto2ffi.max_length) = 64];
+    repeated ComponentType components = 3 [(proto2ffi.max_count) = 16];
+    uint32 component_count = 4;
+    bool active = 5;
+    uint32 layer = 6;
+    uint32 tag = 7;
+}
+
+message SceneGraph {
+    option (proto2ffi.pool_size) = 100;
+
+    repeated uint32 root_entities = 1 [(proto2ffi.max_count) = 256];
+    uint32 root_count = 2;
+    uint32 total_entities = 3;
+    uint64 frame_number = 4;
+}
+
+message RenderCommand {
+    option (proto2ffi.pool_size) = 5000;
+
+    uint32 entity_id = 1;
+    uint32 mesh_id = 2;
+    uint32 material_id = 3;
+    Transform transform = 4;
+    uint32 render_order = 5;
+    bool cast_shadows = 6;
+}
+
+message Light {
+    option (proto2ffi.simd) = true;
+
+    LightType light_type = 1;
+    Vector3 position = 2;
+    Vector3 direction = 3;
+    uint32 color = 4;
+    float intensity = 5;
+    float range = 6;
+    float spot_angle = 7;
+}
+
+message Camera {
+    option (proto2ffi.simd) = true;
+
+    Vector3 position = 1;
+    Vector3 forward = 2;
+    Vector3 up = 3;
+    float fov = 4;
+    float near_clip = 5;
+    float far_clip = 6;
+    float aspect_ratio = 7;
+}
+
+message FrameStats {
+    option (proto2ffi.simd) = true;
+
+    uint64 frame_number = 1;
+    uint64 frame_time_us = 2;
+    uint32 draw_calls = 3;
+    uint32 vertices = 4;
+    uint32 triangles = 5;
+    uint32 active_entities = 6;
+    uint32 visible_entities = 7;
+    float fps = 8;
+}
