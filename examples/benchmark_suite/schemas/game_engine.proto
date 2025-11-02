@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package game_engine;
+
+// Real-world game engine data structures
+
+message Vector3 {
+  option (proto2ffi.simd) = true;
+
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message Quaternion {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
+}
+
+message Transform {
+  Vector3 position = 1;
+  Quaternion rotation = 2;
+  Vector3 scale = 3;
+}
+
+message AABB {
+  Vector3 min = 1;
+  Vector3 max = 2;
+}
+
+message Sphere {
+  Vector3 center = 1;
+  float radius = 2;
+}
+
+enum ColliderType {
+  SPHERE = 0;
+  BOX = 1;
+  CAPSULE = 2;
+  MESH = 3;
+}
+
+message RigidBody {
+  option (proto2ffi.pool_size) = 5000;
+
+  Transform transform = 1;
+  Vector3 velocity = 2;
+  Vector3 angular_velocity = 3;
+  Vector3 force = 4;
+  Vector3 torque = 5;
+  float mass = 6;
+  float friction = 7;
+  float restitution = 8;
+  ColliderType collider_type = 9;
+  uint64 entity_id = 10;
+  bool is_static = 11;
+  bool is_sleeping = 12;
+}
+
+message ParticleEmitter {
+  option (proto2ffi.pool_size) = 1000;
+
+  Vector3 position = 1;
+  Vector3 direction = 2;
+  float emission_rate = 3;
+  float particle_lifetime = 4;
+  float particle_speed = 5;
+  uint32 max_particles = 6;
+  uint32 active_particles = 7;
+  bool is_emitting = 8;
+}
+
+message Particle {
+  option (proto2ffi.pool_size) = 50000;
+
+  Vector3 position = 1;
+  Vector3 velocity = 2;
+  float lifetime = 3;
+  float age = 4;
+  uint32 color = 5;
+  float size = 6;
+}
+
+message Camera {
+  Transform transform = 1;
+  float fov = 2;
+  float near_plane = 3;
+  float far_plane = 4;
+  float aspect_ratio = 5;
+}
+
+message Light {
+  enum LightType {
+    DIRECTIONAL = 0;
+    POINT = 1;
+    SPOT = 2;
+  }
+
+  LightType type = 1;
+  Vector3 position = 2;
+  Vector3 direction = 3;
+  uint32 color = 4;
+  float intensity = 5;
+  float range = 6;
+  float spot_angle = 7;
+}
+
+message PhysicsWorld {
+  Vector3 gravity = 1;
+  uint32 rigid_body_count = 2;
+  uint32 active_body_count = 3;
+  uint64 simulation_step = 4;
+  float time_step = 5;
+}

@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package phase3;
+
+message Particle {
+  option (proto2ffi.pool_size) = 10000;
+
+  double x = 1;
+  double y = 2;
+  double z = 3;
+  double vx = 4;
+  double vy = 5;
+  double vz = 6;
+  double mass = 7;
+  uint32 color = 8;
+  bool active = 9;
+}
+
+message RigidBody {
+  option (proto2ffi.pool_size) = 1000;
+
+  double px = 1;
+  double py = 2;
+  double pz = 3;
+  double qx = 4;
+  double qy = 5;
+  double qz = 6;
+  double qw = 7;
+  double vx = 8;
+  double vy = 9;
+  double vz = 10;
+  double ax = 11;
+  double ay = 12;
+  double az = 13;
+  double mass = 14;
+  uint64 id = 15;
+}
+
+message PoolStats {
+  uint64 total_allocations = 1;
+  uint64 total_frees = 2;
+  uint64 active_objects = 3;
+  uint64 pool_hits = 4;
+  uint64 pool_misses = 5;
+}

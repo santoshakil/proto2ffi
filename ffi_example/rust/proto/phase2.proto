@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package phase2;
+
+message Vec3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Color {
+  uint32 r = 1;
+  uint32 g = 2;
+  uint32 b = 3;
+  uint32 a = 4;
+}
+
+message Vertex {
+  Vec3 position = 1;
+  Vec3 normal = 2;
+  Color color = 3;
+}
+
+message Triangle {
+  repeated Vertex vertices = 1 [(proto2ffi.max_count) = 3];
+  Vec3 normal = 2;
+}
+
+message Mesh {
+  repeated Triangle triangles = 1 [(proto2ffi.max_count) = 100];
+  string name = 2 [(proto2ffi.max_length) = 64];
+  uint32 triangle_count = 3;
+}
+
+message BoundingBox {
+  Vec3 min = 1;
+  Vec3 max = 2;
+}
+
+message Model {
+  Mesh mesh = 1;
+  BoundingBox bounds = 2;
+  uint64 id = 3;
+}

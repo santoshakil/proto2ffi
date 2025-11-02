@@ -1,0 +1,39 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* ~ "\n" | "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+
+proto_file = { SOI ~ syntax? ~ package? ~ import_stmt* ~ (message | enum_def)* ~ EOI }
+
+syntax = { "syntax" ~ "=" ~ string_literal ~ ";" }
+
+package = { "package" ~ ident ~ ("." ~ ident)* ~ ";" }
+
+import_stmt = { "import" ~ string_literal ~ ";" }
+
+message = { "message" ~ ident ~ "{" ~ (field | option_stmt | message | enum_def)* ~ "}" }
+
+field = { field_label? ~ field_type ~ ident ~ "=" ~ number ~ field_options? ~ ";" }
+
+field_label = { "repeated" | "optional" | "required" }
+
+field_type = {
+    "int32" | "int64" | "uint32" | "uint64" |
+    "sint32" | "sint64" | "fixed32" | "fixed64" |
+    "sfixed32" | "sfixed64" | "float" | "double" |
+    "bool" | "string" | "bytes" | ident
+}
+
+field_options = { "[" ~ field_option ~ ("," ~ field_option)* ~ "]" }
+
+field_option = { "(" ~ ident ~ ("." ~ ident)* ~ ")" ~ "=" ~ (number | string_literal | ident) }
+
+option_stmt = { "option" ~ "(" ~ ident ~ ("." ~ ident)* ~ ")" ~ "=" ~ (number | string_literal | ident) ~ ";" }
+
+enum_def = { "enum" ~ ident ~ "{" ~ enum_field* ~ "}" }
+
+enum_field = { ident ~ "=" ~ number ~ ";" }
+
+ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+number = @{ "-"? ~ ASCII_DIGIT+ }
+
+string_literal = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }

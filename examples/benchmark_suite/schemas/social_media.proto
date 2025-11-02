@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+enum PostType {
+    TEXT = 0;
+    IMAGE = 1;
+    VIDEO = 2;
+    LINK = 3;
+    POLL = 4;
+}
+
+enum PostVisibility {
+    PUBLIC = 0;
+    FRIENDS = 1;
+    PRIVATE = 2;
+    CUSTOM = 3;
+}
+
+enum ReactionType {
+    LIKE = 0;
+    LOVE = 1;
+    HAHA = 2;
+    WOW = 3;
+    SAD = 4;
+    ANGRY = 5;
+}
+
+enum NotificationType {
+    POST_LIKE = 0;
+    POST_COMMENT = 1;
+    FRIEND_REQUEST = 2;
+    MENTION = 3;
+    MESSAGE = 4;
+}
+
+message UserId {
+    uint64 id = 1;
+}
+
+message UserProfile {
+    option (proto2ffi.pool_size) = 50000;
+
+    uint64 user_id = 1;
+    string username = 2 [(proto2ffi.max_length) = 32];
+    string display_name = 3 [(proto2ffi.max_length) = 64];
+    string bio = 4 [(proto2ffi.max_length) = 256];
+    string avatar_url = 5 [(proto2ffi.max_length) = 256];
+    uint64 follower_count = 6;
+    uint64 following_count = 7;
+    uint64 post_count = 8;
+    uint64 created_at = 9;
+    bool is_verified = 10;
+}
+
+message Post {
+    option (proto2ffi.pool_size) = 200000;
+
+    uint64 post_id = 1;
+    uint64 author_id = 2;
+    PostType post_type = 3;
+    string content = 4 [(proto2ffi.max_length) = 5000];
+    string media_url = 5 [(proto2ffi.max_length) = 512];
+    PostVisibility visibility = 6;
+    uint64 like_count = 7;
+    uint64 comment_count = 8;
+    uint64 share_count = 9;
+    uint64 view_count = 10;
+    uint64 created_at = 11;
+    uint64 updated_at = 12;
+}
+
+message Comment {
+    option (proto2ffi.pool_size) = 500000;
+
+    uint64 comment_id = 1;
+    uint64 post_id = 2;
+    uint64 author_id = 3;
+    uint64 parent_comment_id = 4;
+    string text = 5 [(proto2ffi.max_length) = 2000];
+    uint64 like_count = 6;
+    uint64 reply_count = 7;
+    uint64 created_at = 8;
+}
+
+message Reaction {
+    option (proto2ffi.pool_size) = 1000000;
+
+    uint64 reaction_id = 1;
+    uint64 user_id = 2;
+    uint64 target_id = 3;
+    ReactionType reaction_type = 4;
+    uint64 created_at = 5;
+}
+
+message FriendConnection {
+    option (proto2ffi.pool_size) = 100000;
+
+    uint64 user_id_1 = 1;
+    uint64 user_id_2 = 2;
+    uint64 connected_at = 3;
+}
+
+message Message {
+    option (proto2ffi.pool_size) = 500000;
+
+    uint64 message_id = 1;
+    uint64 sender_id = 2;
+    uint64 receiver_id = 3;
+    string text = 4 [(proto2ffi.max_length) = 4000];
+    bool is_read = 5;
+    uint64 created_at = 6;
+}
+
+message Notification {
+    option (proto2ffi.pool_size) = 500000;
+
+    uint64 notification_id = 1;
+    uint64 user_id = 2;
+    NotificationType notification_type = 3;
+    uint64 actor_id = 4;
+    uint64 target_id = 5;
+    string text = 6 [(proto2ffi.max_length) = 256];
+    bool is_read = 7;
+    uint64 created_at = 8;
+}
+
+message NewsFeedItem {
+    option (proto2ffi.simd) = true;
+    option (proto2ffi.pool_size) = 100000;
+
+    uint64 post_id = 1;
+    uint64 author_id = 2;
+    double relevance_score = 3;
+    double engagement_score = 4;
+    double recency_score = 5;
+    double final_score = 6;
+    uint64 shown_at = 7;
+}
+
+message FollowerList {
+    uint64 user_id = 1;
+    repeated uint64 follower_ids = 2 [(proto2ffi.max_count) = 10000];
+}
+
+message TimelineCache {
+    option (proto2ffi.simd) = true;
+
+    uint64 user_id = 1;
+    repeated NewsFeedItem items = 2 [(proto2ffi.max_count) = 1000];
+    uint64 last_updated = 3;
+}
+
+message EngagementStats {
+    option (proto2ffi.simd) = true;
+
+    uint64 total_views = 1;
+    uint64 total_likes = 2;
+    uint64 total_comments = 3;
+    uint64 total_shares = 4;
+    double avg_engagement_rate = 5;
+    double viral_coefficient = 6;
+}
+
+message HashtagData {
+    option (proto2ffi.pool_size) = 50000;
+
+    string tag = 1 [(proto2ffi.max_length) = 64];
+    uint64 post_count = 2;
+    uint64 trend_score = 3;
+}
+
+message SearchIndex {
+    uint64 doc_id = 1;
+    string term = 2 [(proto2ffi.max_length) = 128];
+    double relevance_score = 3;
+    uint32 term_frequency = 4;
+}

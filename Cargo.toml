@@ -1,0 +1,49 @@
+[workspace]
+resolver = "2"
+members = [
+    "proto2ffi-core",
+    "proto2ffi-cli",
+    "ffi_example/rust",
+    "examples/flutter_plugin/rust",
+    "examples/benchmark_suite",
+]
+
+[workspace.package]
+version = "0.1.1"
+edition = "2021"
+authors = ["Proto2FFI Contributors"]
+license = "MIT"
+repository = "https://github.com/proto2ffi/proto2ffi"
+homepage = "https://github.com/proto2ffi/proto2ffi"
+documentation = "https://docs.rs/proto2ffi"
+
+[workspace.dependencies]
+# Parser
+pest = "2.7"
+pest_derive = "2.7"
+
+# Code generation
+quote = "1.0"
+proc-macro2 = "1.0"
+syn = { version = "2.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+colored = "2.1"
+
+# Async (for future use)
+tokio = { version = "1.36", features = ["full"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
