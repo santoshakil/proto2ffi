@@ -1199,3 +1199,198 @@ mod advanced_tests {
         assert_eq!(result, vec![0.0, 0.0, 0.0]);
     }
 }
+
+pub fn matrix_multiply_f32(a: &[f32], a_rows: usize, a_cols: usize,
+                             b: &[f32], b_rows: usize, b_cols: usize,
+                             result: &mut [f32]) {
+    assert_eq!(a_cols, b_rows);
+    assert_eq!(a.len(), a_rows * a_cols);
+    assert_eq!(b.len(), b_rows * b_cols);
+    assert_eq!(result.len(), a_rows * b_cols);
+
+    for i in 0..a_rows {
+        for j in 0..b_cols {
+            let mut sum = 0.0;
+            for k in 0..a_cols {
+                sum += a[i * a_cols + k] * b[k * b_cols + j];
+            }
+            result[i * b_cols + j] = sum;
+        }
+    }
+}
+
+pub fn matrix_transpose_f32(matrix: &[f32], rows: usize, cols: usize, result: &mut [f32]) {
+    assert_eq!(matrix.len(), rows * cols);
+    assert_eq!(result.len(), rows * cols);
+
+    for i in 0..rows {
+        for j in 0..cols {
+            result[j * rows + i] = matrix[i * cols + j];
+        }
+    }
+}
+
+pub fn vector_subtract_f32(a: &[f32], b: &[f32], result: &mut [f32]) {
+    assert_eq!(a.len(), b.len());
+    assert_eq!(a.len(), result.len());
+    for i in 0..a.len() {
+        result[i] = a[i] - b[i];
+    }
+}
+
+pub fn vector_magnitude_f32(vec: &[f32]) -> f32 {
+    vec.iter().map(|&x| x * x).sum::<f32>().sqrt()
+}
+
+pub fn vector_normalize_f32(vec: &[f32], result: &mut [f32]) {
+    assert_eq!(vec.len(), result.len());
+    let mag = vector_magnitude_f32(vec);
+    if mag > 0.0 {
+        for i in 0..vec.len() {
+            result[i] = vec[i] / mag;
+        }
+    }
+}
+
+pub fn convolution_1d_f32(signal: &[f32], kernel: &[f32], result: &mut [f32]) {
+    let result_len = signal.len() + kernel.len() - 1;
+    assert_eq!(result.len(), result_len);
+
+    for i in 0..result.len() {
+        result[i] = 0.0;
+    }
+
+    for i in 0..signal.len() {
+        for j in 0..kernel.len() {
+            result[i + j] += signal[i] * kernel[j];
+        }
+    }
+}
+
+pub fn moving_average_f32(data: &[f32], window_size: usize, result: &mut [f32]) {
+    assert!(window_size > 0);
+    assert_eq!(data.len(), result.len());
+
+    for i in 0..data.len() {
+        let start = if i >= window_size { i - window_size + 1 } else { 0 };
+        let end = i + 1;
+        let sum: f32 = data[start..end].iter().sum();
+        result[i] = sum / (end - start) as f32;
+    }
+}
+
+pub fn cross_correlation_f32(a: &[f32], b: &[f32], max_lag: usize, result: &mut [f32]) {
+    let result_len = 2 * max_lag + 1;
+    assert_eq!(result.len(), result_len);
+    assert!(max_lag < a.len().min(b.len()));
+
+    for lag_idx in 0..result_len {
+        let lag = lag_idx as isize - max_lag as isize;
+        let mut sum = 0.0;
+        let mut count = 0;
+
+        for i in 0..a.len() {
+            let j = i as isize + lag;
+            if j >= 0 && (j as usize) < b.len() {
+                sum += a[i] * b[j as usize];
+                count += 1;
+            }
+        }
+
+        result[lag_idx] = if count > 0 { sum / count as f32 } else { 0.0 };
+    }
+}
+
+#[cfg(test)]
+mod matrix_tests {
+    use super::*;
+
+    #[test]
+    fn test_matrix_multiply() {
+        let a = vec![1.0, 2.0, 3.0, 4.0];
+        let b = vec![5.0, 6.0, 7.0, 8.0];
+        let mut result = vec![0.0; 4];
+        matrix_multiply_f32(&a, 2, 2, &b, 2, 2, &mut result);
+        assert_eq!(result, vec![19.0, 22.0, 43.0, 50.0]);
+    }
+
+    #[test]
+    fn test_matrix_transpose() {
+        let matrix = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut result = vec![0.0; 6];
+        matrix_transpose_f32(&matrix, 2, 3, &mut result);
+        assert_eq!(result, vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0]);
+    }
+
+    #[test]
+    fn test_vector_subtract() {
+        let a = vec![5.0, 7.0, 9.0];
+        let b = vec![1.0, 2.0, 3.0];
+        let mut result = vec![0.0; 3];
+        vector_subtract_f32(&a, &b, &mut result);
+        assert_eq!(result, vec![4.0, 5.0, 6.0]);
+    }
+
+    #[test]
+    fn test_vector_magnitude() {
+        let vec = vec![3.0, 4.0];
+        let mag = vector_magnitude_f32(&vec);
+        assert_eq!(mag, 5.0);
+    }
+
+    #[test]
+    fn test_vector_normalize() {
+        let vec = vec![3.0, 4.0];
+        let mut result = vec![0.0; 2];
+        vector_normalize_f32(&vec, &mut result);
+        assert!((result[0] - 0.6).abs() < 0.001);
+        assert!((result[1] - 0.8).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_convolution_1d() {
+        let signal = vec![1.0, 2.0, 3.0];
+        let kernel = vec![1.0, 0.5];
+        let mut result = vec![0.0; 4];
+        convolution_1d_f32(&signal, &kernel, &mut result);
+        assert_eq!(result, vec![1.0, 2.5, 4.0, 1.5]);
+    }
+
+    #[test]
+    fn test_moving_average() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let mut result = vec![0.0; 5];
+        moving_average_f32(&data, 3, &mut result);
+        assert_eq!(result[0], 1.0);
+        assert_eq!(result[1], 1.5);
+        assert_eq!(result[2], 2.0);
+        assert_eq!(result[3], 3.0);
+        assert_eq!(result[4], 4.0);
+    }
+
+    #[test]
+    fn test_cross_correlation() {
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let b = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let mut result = vec![0.0; 5];
+        cross_correlation_f32(&a, &b, 2, &mut result);
+        assert!(result[2] > result[0]);
+        assert!(result[2] > result[4]);
+    }
+
+    #[test]
+    fn test_matrix_identity_multiply() {
+        let a = vec![1.0, 2.0, 3.0, 4.0];
+        let identity = vec![1.0, 0.0, 0.0, 1.0];
+        let mut result = vec![0.0; 4];
+        matrix_multiply_f32(&a, 2, 2, &identity, 2, 2, &mut result);
+        assert_eq!(result, a);
+    }
+
+    #[test]
+    fn test_vector_normalize_zero() {
+        let vec = vec![0.0, 0.0];
+        let mut result = vec![1.0; 2];
+        vector_normalize_f32(&vec, &mut result);
+    }
+}
