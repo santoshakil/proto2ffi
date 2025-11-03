@@ -1,5 +1,5 @@
-use crate::types::{ProtoFile, Message, Field, Enum, FieldType};
-use crate::layout::{Layout, MessageLayout};
+use crate::types::{ProtoFile, Message, Enum, FieldType};
+use crate::layout::Layout;
 use crate::stats::ProtoStats;
 use crate::error::Result;
 use std::io::Write;

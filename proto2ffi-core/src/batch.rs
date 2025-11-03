@@ -1,12 +1,9 @@
-use crate::types::ProtoFile;
-use crate::layout::Layout;
 use crate::error::{Result, Proto2FFIError};
 use crate::parser::parse_proto_file;
 use crate::layout::calculate_layout;
 use crate::generator;
 use crate::codegen_cache::{CodegenCache, hash_file};
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct BatchConfig {
