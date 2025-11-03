@@ -13,7 +13,7 @@ pub struct CodegenCache {
 }
 
 #[derive(Debug, Clone)]
-struct CacheEntry {
+pub struct CacheEntry {
     input_hash: String,
     output_paths: Vec<PathBuf>,
     timestamp: SystemTime,

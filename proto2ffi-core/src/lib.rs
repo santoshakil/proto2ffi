@@ -41,6 +41,7 @@ pub mod optimize;
 pub mod diff;
 pub mod doc;
 pub mod codegen_cache;
+pub mod batch;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -58,6 +59,7 @@ pub use optimize::{Optimizer, OptimizationConfig, UsedFieldsAnalysis, calculate_
 pub use diff::{ProtoDiff, Change, ChangeKind, ChangeCategory, DiffSummary, diff_protos, diff_layouts};
 pub use doc::{DocGenerator, DocFormat};
 pub use codegen_cache::{CodegenCache, hash_file, hash_layout, hash_string};
+pub use batch::{BatchGenerator, BatchConfig, BatchResult, find_proto_files};
 
 use std::path::Path;
 
