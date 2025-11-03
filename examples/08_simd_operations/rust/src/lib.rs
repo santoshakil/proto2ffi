@@ -1021,3 +1021,103 @@ pub extern "C" fn benchmark_operation(
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_i32_sum_scalar() {
+        assert_eq!(i32_sum_scalar(&[1, 2, 3, 4, 5]), 15);
+        assert_eq!(i32_sum_scalar(&[]), 0);
+        assert_eq!(i32_sum_scalar(&[-1, -2, -3]), -6);
+        assert_eq!(i32_sum_scalar(&[i32::MAX, 1]), i32::MIN);
+    }
+
+    #[test]
+    fn test_i32_min_max_scalar() {
+        assert_eq!(i32_min_max_scalar(&[5, 2, 8, 1, 9]), (1, 9));
+        assert_eq!(i32_min_max_scalar(&[42]), (42, 42));
+        assert_eq!(i32_min_max_scalar(&[-5, -2, -8]), (-8, -2));
+        assert_eq!(i32_min_max_scalar(&[]), (i32::MAX, i32::MIN));
+    }
+
+    #[test]
+    fn test_u32_sum_scalar() {
+        assert_eq!(u32_sum_scalar(&[1, 2, 3, 4, 5]), 15);
+        assert_eq!(u32_sum_scalar(&[]), 0);
+        assert_eq!(u32_sum_scalar(&[u32::MAX, 1]), 0);
+    }
+
+    #[test]
+    fn test_u32_min_max_scalar() {
+        assert_eq!(u32_min_max_scalar(&[5, 2, 8, 1, 9]), (1, 9));
+        assert_eq!(u32_min_max_scalar(&[42]), (42, 42));
+        assert_eq!(u32_min_max_scalar(&[]), (u32::MAX, u32::MIN));
+    }
+
+    #[test]
+    fn test_i64_sum_scalar() {
+        assert_eq!(i64_sum_scalar(&[1, 2, 3, 4, 5]), 15);
+        assert_eq!(i64_sum_scalar(&[]), 0);
+        assert_eq!(i64_sum_scalar(&[-100, -200, -300]), -600);
+    }
+
+    #[test]
+    fn test_i64_min_max_scalar() {
+        assert_eq!(i64_min_max_scalar(&[5, 2, 8, 1, 9]), (1, 9));
+        assert_eq!(i64_min_max_scalar(&[]), (i64::MAX, i64::MIN));
+    }
+
+    #[test]
+    fn test_u64_sum_scalar() {
+        assert_eq!(u64_sum_scalar(&[1, 2, 3, 4, 5]), 15);
+        assert_eq!(u64_sum_scalar(&[]), 0);
+    }
+
+    #[test]
+    fn test_f32_sum_scalar() {
+        let (sum, has_nan, has_inf) = f32_sum_scalar(&[1.0, 2.0, 3.0]);
+        assert_eq!(sum, 6.0);
+        assert!(!has_nan);
+        assert!(!has_inf);
+        
+        let (_, has_nan, _) = f32_sum_scalar(&[1.0, f32::NAN, 3.0]);
+        assert!(has_nan);
+        
+        let (_, _, has_inf) = f32_sum_scalar(&[1.0, f32::INFINITY, 3.0]);
+        assert!(has_inf);
+    }
+
+    #[test]
+    fn test_f32_min_max_scalar() {
+        let (min, max, has_nan, has_inf) = f32_min_max_scalar(&[5.0, 2.0, 8.0, 1.0]);
+        assert_eq!(min, 1.0);
+        assert_eq!(max, 8.0);
+        assert!(!has_nan);
+        assert!(!has_inf);
+        
+        let (_, _, has_nan, _) = f32_min_max_scalar(&[1.0, f32::NAN, 3.0]);
+        assert!(has_nan);
+    }
+
+    #[test]
+    fn test_f64_sum_scalar() {
+        let (sum, has_nan, has_inf) = f64_sum_scalar(&[1.0, 2.0, 3.0]);
+        assert_eq!(sum, 6.0);
+        assert!(!has_nan);
+        assert!(!has_inf);
+        
+        let (_, has_nan, _) = f64_sum_scalar(&[1.0, f64::NAN, 3.0]);
+        assert!(has_nan);
+    }
+
+    #[test]
+    fn test_f64_min_max_scalar() {
+        let (min, max, has_nan, has_inf) = f64_min_max_scalar(&[5.0, 2.0, 8.0, 1.0]);
+        assert_eq!(min, 1.0);
+        assert_eq!(max, 8.0);
+        assert!(!has_nan);
+        assert!(!has_inf);
+    }
+}
