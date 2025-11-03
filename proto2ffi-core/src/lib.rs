@@ -69,8 +69,40 @@ pub fn generate_all(
     rust_output: &Path,
     dart_output: &Path,
 ) -> Result<()> {
-    generator::rust::generate_rust(layout, rust_output)?;
-    generator::dart::generate_dart(layout, dart_output)?;
+    use std::fs;
+
+    // Create output directories
+    fs::create_dir_all(rust_output)?;
+    fs::create_dir_all(dart_output)?;
+
+    // Rust generation - 4 layers
+    generator::rust::generate_rust(layout, rust_output)?;  // Generates ffi.rs
+    generator::generate_rust_proto_models(layout, &rust_output.join("proto.rs"))?;
+    generator::generate_rust_conversions(layout, &rust_output.join("conversion.rs"))?;
+    generator::generate_rust_wrappers(layout, &rust_output.join("wrapper.rs"))?;
+    generator::generate_c_header(layout, rust_output)?;
+
+    // Generate Rust mod.rs to export public API
+    let mod_content = r#"//! Generated FFI bindings from Protocol Buffers
+//!
+//! Users interact with proto models - FFI is transparent
+
+pub mod ffi;
+pub mod proto;
+mod conversion;
+pub mod wrapper;
+
+pub use proto::*;
+pub use wrapper::*;
+"#;
+    fs::write(rust_output.join("mod.rs"), mod_content)?;
+
+    // Dart generation - 4 layers
+    generator::dart::generate_dart(layout, dart_output)?;  // Generates ffi.dart
+    generator::generate_dart_proto_models(layout, &dart_output.join("proto.dart"))?;
+    generator::generate_dart_conversions(layout, &dart_output.join("conversion.dart"))?;
+    generator::generate_dart_wrappers(layout, &dart_output.join("wrapper.dart"))?;
+
     Ok(())
 }
 

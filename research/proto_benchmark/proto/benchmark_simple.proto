@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package benchmark;
+
+import "proto2ffi.proto";
+
+message User {
+  optional uint64 user_id = 1;
+  optional string username = 2 [(proto2ffi.max_length) = 64];
+  optional string email = 3 [(proto2ffi.max_length) = 128];
+  optional string first_name = 4 [(proto2ffi.max_length) = 64];
+  optional string last_name = 5 [(proto2ffi.max_length) = 64];
+  optional string display_name = 6 [(proto2ffi.max_length) = 64];
+  optional string bio = 7 [(proto2ffi.max_length) = 512];
+  optional string avatar_url = 8 [(proto2ffi.max_length) = 256];
+  optional uint64 date_of_birth = 9;
+  optional bool is_verified = 10;
+  optional bool is_premium = 11;
+  optional uint64 created_at = 12;
+  optional uint64 updated_at = 13;
+  optional double account_balance = 14;
+  optional uint32 reputation_score = 15;
+}
+
+message Post {
+  optional uint64 post_id = 1;
+  optional uint64 user_id = 2;
+  optional string username = 3 [(proto2ffi.max_length) = 64];
+  optional string title = 4 [(proto2ffi.max_length) = 256];
+  optional string content = 5 [(proto2ffi.max_length) = 4096];
+  optional uint64 created_at = 6;
+  optional uint64 updated_at = 7;
+  optional uint64 view_count = 8;
+  optional uint64 like_count = 9;
+  optional uint64 comment_count = 10;
+  optional bool is_edited = 11;
+  optional bool is_pinned = 12;
+}

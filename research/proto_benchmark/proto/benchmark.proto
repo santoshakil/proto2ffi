@@ -1,0 +1,677 @@
+syntax = "proto3";
+
+package benchmark;
+
+// Comprehensive benchmark proto for testing serialization performance
+// This represents a large-scale social media + e-commerce system
+
+// User profile with extensive information
+message User {
+  uint64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string display_name = 6;
+  string bio = 7;
+  string avatar_url = 8;
+  string cover_photo_url = 9;
+  string phone_number = 10;
+  uint64 date_of_birth = 11;
+  Gender gender = 12;
+  Address primary_address = 13;
+  repeated Address additional_addresses = 14;
+  UserSettings settings = 15;
+  UserStats stats = 16;
+  repeated SocialLink social_links = 17;
+  bool is_verified = 18;
+  bool is_premium = 19;
+  AccountStatus status = 20;
+  uint64 created_at = 21;
+  uint64 updated_at = 22;
+  uint64 last_login = 23;
+  string device_id = 24;
+  string ip_address = 25;
+  string user_agent = 26;
+  string timezone = 27;
+  string language = 28;
+  string country_code = 29;
+  double account_balance = 30;
+  repeated PaymentMethod payment_methods = 31;
+  repeated Subscription subscriptions = 32;
+  bytes profile_data = 33;
+  map<string, string> metadata = 34;
+  repeated string tags = 35;
+  repeated uint64 follower_ids = 36;
+  repeated uint64 following_ids = 37;
+  repeated uint64 blocked_user_ids = 38;
+  int32 reputation_score = 39;
+  string referral_code = 40;
+}
+
+message Address {
+  string street_line1 = 1;
+  string street_line2 = 2;
+  string city = 3;
+  string state = 4;
+  string postal_code = 5;
+  string country = 6;
+  AddressType type = 7;
+  bool is_default = 8;
+  double latitude = 9;
+  double longitude = 10;
+  string instructions = 11;
+}
+
+message UserSettings {
+  NotificationSettings notifications = 1;
+  PrivacySettings privacy = 2;
+  DisplaySettings display = 3;
+  bool email_verified = 4;
+  bool phone_verified = 5;
+  bool two_factor_enabled = 6;
+  repeated string blocked_keywords = 7;
+  bool auto_play_videos = 8;
+  bool show_adult_content = 9;
+  int32 feed_refresh_interval = 10;
+}
+
+message NotificationSettings {
+  bool push_enabled = 1;
+  bool email_enabled = 2;
+  bool sms_enabled = 3;
+  bool likes_notifications = 4;
+  bool comments_notifications = 5;
+  bool mentions_notifications = 6;
+  bool follow_notifications = 7;
+  bool message_notifications = 8;
+  bool marketing_emails = 9;
+  repeated uint32 quiet_hours_start = 10;
+  repeated uint32 quiet_hours_end = 11;
+}
+
+message PrivacySettings {
+  ProfileVisibility profile_visibility = 1;
+  bool show_email = 2;
+  bool show_phone = 3;
+  bool show_location = 4;
+  bool allow_tags = 5;
+  bool allow_mentions = 6;
+  bool searchable = 7;
+  bool show_online_status = 8;
+  bool show_last_seen = 9;
+  bool allow_direct_messages = 10;
+}
+
+message DisplaySettings {
+  string theme = 1;
+  string font_size = 2;
+  bool compact_mode = 3;
+  bool show_thumbnails = 4;
+  bool high_contrast = 5;
+  string date_format = 6;
+  string time_format = 7;
+}
+
+message UserStats {
+  uint64 total_posts = 1;
+  uint64 total_comments = 2;
+  uint64 total_likes = 3;
+  uint64 total_shares = 4;
+  uint64 total_views = 5;
+  uint64 follower_count = 6;
+  uint64 following_count = 7;
+  uint64 total_purchases = 8;
+  double total_spent = 9;
+  uint32 engagement_score = 10;
+  uint32 influence_score = 11;
+  repeated Achievement achievements = 12;
+}
+
+message Achievement {
+  string achievement_id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_url = 4;
+  uint64 unlocked_at = 5;
+  int32 points = 6;
+}
+
+message SocialLink {
+  string platform = 1;
+  string url = 2;
+  string username = 3;
+  bool verified = 4;
+}
+
+message PaymentMethod {
+  string payment_method_id = 1;
+  PaymentType type = 2;
+  string last_four_digits = 3;
+  string card_brand = 4;
+  uint32 expiry_month = 5;
+  uint32 expiry_year = 6;
+  string billing_address_id = 7;
+  bool is_default = 8;
+  string provider = 9;
+}
+
+message Subscription {
+  string subscription_id = 1;
+  string plan_id = 2;
+  string plan_name = 3;
+  double price = 4;
+  string currency = 5;
+  SubscriptionStatus status = 6;
+  uint64 start_date = 7;
+  uint64 end_date = 8;
+  uint64 next_billing_date = 9;
+  bool auto_renew = 10;
+}
+
+// Post/Content with rich media
+message Post {
+  uint64 post_id = 1;
+  uint64 user_id = 2;
+  string username = 3;
+  string user_avatar_url = 4;
+  PostType type = 5;
+  string title = 6;
+  string content = 7;
+  repeated MediaAttachment media = 8;
+  repeated string hashtags = 9;
+  repeated UserMention mentions = 10;
+  Location location = 11;
+  uint64 created_at = 12;
+  uint64 updated_at = 13;
+  PostStats stats = 14;
+  PostSettings settings = 15;
+  repeated Comment comments = 16;
+  repeated Reaction reactions = 17;
+  repeated string category_ids = 18;
+  string language = 19;
+  repeated Translation translations = 20;
+  bool is_edited = 21;
+  bool is_pinned = 22;
+  bool is_sponsored = 23;
+  string sponsor_name = 24;
+  repeated Link links = 25;
+  repeated Poll polls = 26;
+  repeated Tag tags = 27;
+  bytes custom_data = 28;
+  uint64 shared_post_id = 29;
+  string share_comment = 30;
+}
+
+message MediaAttachment {
+  string media_id = 1;
+  MediaType type = 2;
+  string url = 3;
+  string thumbnail_url = 4;
+  string preview_url = 5;
+  uint64 size_bytes = 6;
+  uint32 width = 7;
+  uint32 height = 8;
+  uint32 duration_seconds = 9;
+  string mime_type = 10;
+  string alt_text = 11;
+  repeated string filters = 12;
+  map<string, string> metadata = 13;
+}
+
+message UserMention {
+  uint64 user_id = 1;
+  string username = 2;
+  uint32 start_index = 3;
+  uint32 end_index = 4;
+}
+
+message Location {
+  double latitude = 1;
+  double longitude = 2;
+  string name = 3;
+  string address = 4;
+  string city = 5;
+  string country = 6;
+  string place_id = 7;
+}
+
+message PostStats {
+  uint64 view_count = 1;
+  uint64 like_count = 2;
+  uint64 comment_count = 3;
+  uint64 share_count = 4;
+  uint64 save_count = 5;
+  uint64 click_count = 6;
+  double engagement_rate = 7;
+  double virality_score = 8;
+}
+
+message PostSettings {
+  PostVisibility visibility = 1;
+  bool allow_comments = 2;
+  bool allow_shares = 3;
+  bool allow_downloads = 4;
+  bool show_stats = 5;
+  repeated string allowed_countries = 6;
+  uint64 expiry_date = 7;
+}
+
+message Comment {
+  uint64 comment_id = 1;
+  uint64 post_id = 2;
+  uint64 user_id = 3;
+  string username = 4;
+  string user_avatar_url = 5;
+  uint64 parent_comment_id = 6;
+  string content = 7;
+  repeated MediaAttachment media = 8;
+  uint64 created_at = 9;
+  uint64 updated_at = 10;
+  CommentStats stats = 11;
+  repeated Reaction reactions = 12;
+  bool is_edited = 13;
+  bool is_pinned = 14;
+  repeated Comment replies = 15;
+}
+
+message CommentStats {
+  uint64 like_count = 1;
+  uint64 reply_count = 2;
+}
+
+message Reaction {
+  uint64 user_id = 1;
+  ReactionType type = 2;
+  uint64 created_at = 3;
+}
+
+message Translation {
+  string language_code = 1;
+  string title = 2;
+  string content = 3;
+  bool is_auto_translated = 4;
+}
+
+message Link {
+  string url = 1;
+  string title = 2;
+  string description = 3;
+  string image_url = 4;
+  string domain = 5;
+}
+
+message Poll {
+  string poll_id = 1;
+  string question = 2;
+  repeated PollOption options = 3;
+  uint64 total_votes = 4;
+  uint64 end_date = 5;
+  bool multiple_choice = 6;
+}
+
+message PollOption {
+  string option_id = 1;
+  string text = 2;
+  uint64 vote_count = 3;
+  double percentage = 4;
+}
+
+message Tag {
+  string tag_id = 1;
+  string name = 2;
+  string color = 3;
+}
+
+// Product for e-commerce
+message Product {
+  uint64 product_id = 1;
+  string sku = 2;
+  string name = 3;
+  string description = 4;
+  string short_description = 5;
+  repeated string category_ids = 6;
+  string brand = 7;
+  double price = 8;
+  double compare_at_price = 9;
+  double cost = 10;
+  string currency = 11;
+  repeated ProductVariant variants = 12;
+  repeated MediaAttachment images = 13;
+  repeated MediaAttachment videos = 14;
+  ProductInventory inventory = 15;
+  repeated ProductAttribute attributes = 16;
+  repeated ProductReview reviews = 17;
+  ProductStats stats = 18;
+  repeated string tags = 19;
+  uint64 created_at = 20;
+  uint64 updated_at = 21;
+  ProductStatus status = 22;
+  bool is_featured = 23;
+  bool is_new = 24;
+  bool is_on_sale = 25;
+  repeated RelatedProduct related_products = 26;
+  ShippingInfo shipping = 27;
+  repeated string compatible_products = 28;
+  map<string, string> metadata = 29;
+  SEOInfo seo = 30;
+}
+
+message ProductVariant {
+  string variant_id = 1;
+  string sku = 2;
+  string name = 3;
+  double price = 4;
+  repeated VariantOption options = 5;
+  string image_url = 6;
+  int32 stock_quantity = 7;
+  double weight = 8;
+  Dimensions dimensions = 9;
+  string barcode = 10;
+}
+
+message VariantOption {
+  string name = 1;
+  string value = 2;
+}
+
+message ProductInventory {
+  int32 stock_quantity = 1;
+  int32 reserved_quantity = 2;
+  int32 available_quantity = 3;
+  bool track_inventory = 4;
+  bool allow_backorder = 5;
+  int32 low_stock_threshold = 6;
+  repeated WarehouseStock warehouse_stocks = 7;
+}
+
+message WarehouseStock {
+  string warehouse_id = 1;
+  string warehouse_name = 2;
+  int32 quantity = 3;
+  string location = 4;
+}
+
+message ProductAttribute {
+  string name = 1;
+  repeated string values = 2;
+  bool is_variant_attribute = 3;
+}
+
+message ProductReview {
+  uint64 review_id = 1;
+  uint64 user_id = 2;
+  string username = 3;
+  string user_avatar_url = 4;
+  uint32 rating = 5;
+  string title = 6;
+  string content = 7;
+  repeated MediaAttachment images = 8;
+  uint64 created_at = 9;
+  ReviewStats stats = 10;
+  bool verified_purchase = 11;
+  string variant_id = 12;
+}
+
+message ReviewStats {
+  uint64 helpful_count = 1;
+  uint64 not_helpful_count = 2;
+}
+
+message ProductStats {
+  uint64 view_count = 1;
+  uint64 cart_add_count = 2;
+  uint64 purchase_count = 3;
+  uint64 wishlist_count = 4;
+  double average_rating = 5;
+  uint64 review_count = 6;
+  uint64 share_count = 7;
+}
+
+message RelatedProduct {
+  uint64 product_id = 1;
+  string relation_type = 2;
+}
+
+message ShippingInfo {
+  bool free_shipping = 1;
+  double weight = 2;
+  Dimensions dimensions = 3;
+  repeated ShippingMethod available_methods = 4;
+  string shipping_class = 5;
+}
+
+message ShippingMethod {
+  string method_id = 1;
+  string name = 2;
+  double cost = 3;
+  uint32 estimated_days = 4;
+}
+
+message Dimensions {
+  double length = 1;
+  double width = 2;
+  double height = 3;
+  string unit = 4;
+}
+
+message SEOInfo {
+  string meta_title = 1;
+  string meta_description = 2;
+  repeated string meta_keywords = 3;
+  string canonical_url = 4;
+  map<string, string> og_tags = 5;
+}
+
+// Order/Transaction
+message Order {
+  uint64 order_id = 1;
+  string order_number = 2;
+  uint64 user_id = 3;
+  repeated OrderItem items = 4;
+  double subtotal = 5;
+  double tax = 6;
+  double shipping_cost = 7;
+  double discount = 8;
+  double total = 9;
+  string currency = 10;
+  OrderStatus status = 11;
+  PaymentInfo payment = 12;
+  Address shipping_address = 13;
+  Address billing_address = 14;
+  repeated OrderStatusHistory status_history = 15;
+  string tracking_number = 16;
+  string carrier = 17;
+  uint64 created_at = 18;
+  uint64 updated_at = 19;
+  uint64 shipped_at = 20;
+  uint64 delivered_at = 21;
+  string customer_notes = 22;
+  string internal_notes = 23;
+  repeated Coupon applied_coupons = 24;
+  ShippingMethod shipping_method = 25;
+  map<string, string> metadata = 26;
+}
+
+message OrderItem {
+  string order_item_id = 1;
+  uint64 product_id = 2;
+  string variant_id = 3;
+  string product_name = 4;
+  string variant_name = 5;
+  string sku = 6;
+  uint32 quantity = 7;
+  double unit_price = 8;
+  double total_price = 9;
+  double tax_amount = 10;
+  double discount_amount = 11;
+  string image_url = 12;
+  map<string, string> attributes = 13;
+}
+
+message OrderStatusHistory {
+  OrderStatus status = 1;
+  uint64 timestamp = 2;
+  string note = 3;
+  string updated_by = 4;
+}
+
+message PaymentInfo {
+  string payment_id = 1;
+  string payment_method_id = 2;
+  PaymentType type = 3;
+  double amount = 4;
+  string currency = 5;
+  PaymentStatus status = 6;
+  string transaction_id = 7;
+  string provider = 8;
+  uint64 created_at = 9;
+  map<string, string> metadata = 10;
+}
+
+message Coupon {
+  string coupon_id = 1;
+  string code = 2;
+  CouponType type = 3;
+  double value = 4;
+  double minimum_purchase = 5;
+  uint64 expiry_date = 6;
+}
+
+// Enums
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  MALE = 1;
+  FEMALE = 2;
+  OTHER = 3;
+  PREFER_NOT_TO_SAY = 4;
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  SUSPENDED = 2;
+  BANNED = 3;
+  DELETED = 4;
+  PENDING_VERIFICATION = 5;
+}
+
+enum AddressType {
+  ADDRESS_TYPE_UNSPECIFIED = 0;
+  HOME = 1;
+  WORK = 2;
+  BILLING = 3;
+  SHIPPING = 4;
+}
+
+enum ProfileVisibility {
+  PROFILE_VISIBILITY_UNSPECIFIED = 0;
+  PUBLIC = 1;
+  FRIENDS = 2;
+  PRIVATE = 3;
+}
+
+enum PaymentType {
+  PAYMENT_TYPE_UNSPECIFIED = 0;
+  CREDIT_CARD = 1;
+  DEBIT_CARD = 2;
+  PAYPAL = 3;
+  BANK_TRANSFER = 4;
+  CRYPTOCURRENCY = 5;
+  CASH_ON_DELIVERY = 6;
+}
+
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  TRIAL = 1;
+  SUBSCRIPTION_ACTIVE = 2;
+  SUBSCRIPTION_CANCELLED = 3;
+  SUBSCRIPTION_EXPIRED = 4;
+  SUBSCRIPTION_PAYMENT_FAILED = 5;
+}
+
+enum PostType {
+  POST_TYPE_UNSPECIFIED = 0;
+  TEXT = 1;
+  IMAGE = 2;
+  VIDEO = 3;
+  LINK = 4;
+  POLL_POST = 5;
+  LIVE = 6;
+  STORY = 7;
+}
+
+enum MediaType {
+  MEDIA_TYPE_UNSPECIFIED = 0;
+  IMAGE_MEDIA = 1;
+  VIDEO_MEDIA = 2;
+  AUDIO = 3;
+  DOCUMENT = 4;
+  GIF = 5;
+}
+
+enum PostVisibility {
+  POST_VISIBILITY_UNSPECIFIED = 0;
+  POST_PUBLIC = 1;
+  POST_FRIENDS = 2;
+  POST_PRIVATE = 3;
+  CUSTOM = 4;
+}
+
+enum ReactionType {
+  REACTION_TYPE_UNSPECIFIED = 0;
+  LIKE = 1;
+  LOVE = 2;
+  HAHA = 3;
+  WOW = 4;
+  SAD = 5;
+  ANGRY = 6;
+}
+
+enum ProductStatus {
+  PRODUCT_STATUS_UNSPECIFIED = 0;
+  DRAFT = 1;
+  PRODUCT_ACTIVE = 2;
+  ARCHIVED = 3;
+  OUT_OF_STOCK = 4;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_PENDING = 1;
+  ORDER_PROCESSING = 2;
+  ORDER_SHIPPED = 3;
+  ORDER_DELIVERED = 4;
+  ORDER_CANCELLED = 5;
+  ORDER_REFUNDED = 6;
+  ORDER_FAILED = 7;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_PENDING = 1;
+  COMPLETED = 2;
+  PAYMENT_FAILED = 3;
+  PAYMENT_REFUNDED = 4;
+}
+
+enum CouponType {
+  COUPON_TYPE_UNSPECIFIED = 0;
+  PERCENTAGE = 1;
+  FIXED_AMOUNT = 2;
+  FREE_SHIPPING = 3;
+}
+
+// Aggregate message for comprehensive testing
+message BenchmarkData {
+  repeated User users = 1;
+  repeated Post posts = 2;
+  repeated Product products = 3;
+  repeated Order orders = 4;
+  map<uint64, User> user_index = 5;
+  map<uint64, Product> product_index = 6;
+  map<string, string> config = 7;
+  uint64 timestamp = 8;
+  string version = 9;
+  bytes raw_data = 10;
+}

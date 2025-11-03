@@ -63,8 +63,9 @@ fn generate_c_struct(message: &MessageLayout) -> Result<String> {
 
     code.push_str(&format!("/* Proto message: {} */\n", message.name));
     code.push_str(&format!("/* Size: {} bytes, Alignment: {} bytes */\n", message.size, message.alignment));
+    code.push_str(&format!("/* Internal FFI type - users interact with proto models instead */\n"));
     code.push_str(&format!("#pragma pack(push, {})\n", message.alignment));
-    code.push_str(&format!("typedef struct {} {{\n", message.name));
+    code.push_str(&format!("typedef struct {}FFI {{\n", message.name));
 
     for field in &message.fields {
         if field.repeated && field.max_count.is_some() {
@@ -75,7 +76,7 @@ fn generate_c_struct(message: &MessageLayout) -> Result<String> {
         code.push_str(&format!("    {} {};\n", c_type, field.name));
     }
 
-    code.push_str(&format!("}} {};\n", message.name));
+    code.push_str(&format!("}} {}FFI;\n", message.name));
     code.push_str("#pragma pack(pop)\n");
 
     Ok(code)

@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+package benchmark;
+
+message User {
+  optional uint64 user_id = 1;
+  optional string username = 2;
+  optional string email = 3;
+  optional string first_name = 4;
+  optional string last_name = 5;
+  optional string display_name = 6;
+  optional string bio = 7;
+  optional string avatar_url = 8;
+  optional uint64 date_of_birth = 9;
+  optional bool is_verified = 10;
+  optional bool is_premium = 11;
+  optional uint64 created_at = 12;
+  optional uint64 updated_at = 13;
+  optional double account_balance = 14;
+  optional uint32 reputation_score = 15;
+}
+
+message Post {
+  optional uint64 post_id = 1;
+  optional uint64 user_id = 2;
+  optional string username = 3;
+  optional string title = 4;
+  optional string content = 5;
+  optional uint64 created_at = 6;
+  optional uint64 updated_at = 7;
+  optional uint64 view_count = 8;
+  optional uint64 like_count = 9;
+  optional uint64 comment_count = 10;
+  optional bool is_edited = 11;
+  optional bool is_pinned = 12;
+}

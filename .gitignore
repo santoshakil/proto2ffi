@@ -23,11 +23,6 @@ pubspec.lock
 .DS_Store
 Thumbs.db
 
-# Generated
-**/generated/
-**/*.g.dart
-**/*.freezed.dart
-
 # Test coverage
 coverage/
 *.profraw

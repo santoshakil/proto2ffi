@@ -56,7 +56,7 @@ pub fn generate_rust(layout: &Layout, output_dir: &Path) -> Result<()> {
         }
     }
 
-    let output_file = output_dir.join("generated.rs");
+    let output_file = output_dir.join("ffi.rs");
     fs::write(&output_file, tokens.to_string())?;
 
     let _ = std::process::Command::new("rustfmt")
@@ -91,7 +91,7 @@ fn generate_enum(enum_layout: &EnumLayout) -> Result<TokenStream> {
 }
 
 fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
-    let name = format_ident!("{}", message.name);
+    let name = format_ident!("{}FFI", message.name);
     let msg_name_str = &message.name;
     let alignment = proc_macro2::Literal::usize_unsuffixed(message.alignment);
     let size = proc_macro2::Literal::usize_unsuffixed(message.size);
@@ -100,6 +100,7 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
     let mut fields = Vec::new();
 
     for field in &message.fields {
+        // Add count field for repeated fields
         if field.repeated && field.max_count.is_some() {
             let count_field = format_ident!("{}_count", field.name);
             fields.push(quote! { pub #count_field: u32 });
@@ -108,6 +109,12 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
         let field_name = escape_rust_keyword(&field.name);
         let field_type = parse_rust_type(&field.rust_type);
         fields.push(quote! { pub #field_name: #field_type });
+
+        // Add length field for string fields (non-repeated [u8; N])
+        if !field.repeated && field.rust_type.starts_with('[') && field.rust_type.contains("u8") {
+            let len_field = format_ident!("{}_len", field.name);
+            fields.push(quote! { pub #len_field: u32 });
+        }
     }
 
     Ok(quote! {
@@ -119,6 +126,8 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
         #[doc = ""]
         #[doc = "Zero-copy FFI compatible struct with C representation."]
         #[doc = "Use `from_ptr` and `from_ptr_mut` for safe pointer conversion."]
+        #[doc = ""]
+        #[doc = "Internal FFI type - users interact with proto models instead."]
         #[repr(C, align(#alignment))]
         #[derive(Copy, Clone, Debug)]
         pub struct #name {
@@ -128,7 +137,7 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
 }
 
 fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
-    let name = format_ident!("{}", message.name);
+    let name = format_ident!("{}FFI", message.name);
     let size = proc_macro2::Literal::usize_unsuffixed(message.size);
     let alignment = proc_macro2::Literal::usize_unsuffixed(message.alignment);
 
@@ -255,7 +264,7 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 }
 
 fn generate_message_ffi(message: &MessageLayout) -> Result<TokenStream> {
-    let name = format_ident!("{}", message.name);
+    let name = format_ident!("{}FFI", message.name);
     let msg_name_str = &message.name;
     let size_fn = format_ident!("{}_size", message.name.to_lowercase());
     let align_fn = format_ident!("{}_alignment", message.name.to_lowercase());

@@ -29,7 +29,7 @@ pub fn generate_dart(layout: &Layout, output_dir: &Path) -> Result<()> {
 
     code.push_str(&generate_bindings(layout)?);
 
-    let output_file = output_dir.join("generated.dart");
+    let output_file = output_dir.join("ffi.dart");
     fs::write(&output_file, code)?;
 
     Ok(())
@@ -83,7 +83,9 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
     code.push_str("///\n");
     code.push_str("/// Zero-copy FFI compatible struct with C representation.\n");
     code.push_str("/// Use [allocate] to create new instances.\n");
-    code.push_str(&format!("final class {} extends ffi.Struct {{\n", message.name));
+    code.push_str("///\n");
+    code.push_str("/// Internal FFI type - users interact with proto models instead.\n");
+    code.push_str(&format!("final class {}FFI extends ffi.Struct {{\n", message.name));
 
     let mut count_fields = Vec::new();
 
@@ -99,6 +101,9 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
 
             if field.dart_type == "String" || field.dart_type == "Uint8List" {
                 code.push_str(&format!("  external ffi.Array<ffi.Uint8> {};\n\n", field.name));
+                // Add length field for strings
+                code.push_str("  @ffi.Uint32()\n");
+                code.push_str(&format!("  external int {}_len;\n\n", field.name));
             } else if field.repeated && field.max_count.is_some() {
                 let inner_type = field.rust_type
                     .trim_start_matches('[')
@@ -144,10 +149,10 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
     code.push_str("  /// Returns a pointer to the allocated memory.\n");
     code.push_str("  /// Must be freed using `calloc.free()` when done.\n");
     code.push_str(&format!(
-        "  static ffi.Pointer<{}> allocate() {{\n",
+        "  static ffi.Pointer<{}FFI> allocate() {{\n",
         message.name
     ));
-    code.push_str(&format!("    return calloc<{}>();\n", message.name));
+    code.push_str(&format!("    return calloc<{}FFI>();\n", message.name));
     code.push_str("  }\n");
 
     code.push_str("}\n");
