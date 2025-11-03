@@ -122,3 +122,113 @@ mod tests {
         assert_eq!(stats.avg, 20.0);
     }
 }
+#[cfg(test)]
+mod additional_tests {
+    use super::*;
+
+    #[test]
+    fn test_point_midpoint() {
+        let p1 = Point { x: 0.0, y: 0.0 };
+        let p2 = Point { x: 10.0, y: 10.0 };
+        let mut result = Point::default();
+        
+        point_midpoint(&p1, &p2, &mut result);
+        assert_eq!(result.x, 5.0);
+        assert_eq!(result.y, 5.0);
+    }
+
+    #[test]
+    fn test_counter_add() {
+        let mut counter = Counter::default();
+        
+        let val1 = counter_add(&mut counter, 10);
+        assert_eq!(val1, 10);
+        
+        let val2 = counter_add(&mut counter, 25);
+        assert_eq!(val2, 35);
+        
+        let val3 = counter_add(&mut counter, -5);
+        assert_eq!(val3, 30);
+    }
+
+    #[test]
+    fn test_stats_reset() {
+        let mut stats = Stats::default();
+        
+        stats_update(&mut stats, 100.0);
+        stats_update(&mut stats, 200.0);
+        assert_eq!(stats.count, 2);
+        
+        stats_reset(&mut stats);
+        assert_eq!(stats.count, 0);
+        assert_eq!(stats.sum, 0.0);
+    }
+
+    #[test]
+    fn test_point_distance_zero() {
+        let p1 = Point { x: 5.0, y: 5.0 };
+        let p2 = Point { x: 5.0, y: 5.0 };
+        
+        let dist = point_distance(&p1, &p2);
+        assert_eq!(dist, 0.0);
+    }
+
+    #[test]
+    fn test_point_distance_negative() {
+        let p1 = Point { x: -3.0, y: -4.0 };
+        let p2 = Point { x: 0.0, y: 0.0 };
+        
+        let dist = point_distance(&p1, &p2);
+        assert_eq!(dist, 5.0);
+    }
+
+    #[test]
+    fn test_counter_overflow() {
+        let mut counter = Counter { value: i64::MAX - 1, timestamp: 0 };
+        
+        counter_increment(&mut counter);
+        assert_eq!(counter.value, i64::MAX);
+    }
+
+    #[test]
+    fn test_stats_single_value() {
+        let mut stats = Stats::default();
+        
+        stats_update(&mut stats, 42.0);
+        assert_eq!(stats.min, 42.0);
+        assert_eq!(stats.max, 42.0);
+        assert_eq!(stats.avg, 42.0);
+    }
+
+    #[test]
+    fn test_stats_negative_values() {
+        let mut stats = Stats::default();
+        
+        stats_update(&mut stats, -10.0);
+        stats_update(&mut stats, -20.0);
+        stats_update(&mut stats, -5.0);
+        
+        assert_eq!(stats.min, -20.0);
+        assert_eq!(stats.max, -5.0);
+        assert_eq!(stats.avg, -11.666666666666666);
+    }
+
+    #[test]
+    fn test_point_midpoint_negative() {
+        let p1 = Point { x: -10.0, y: -10.0 };
+        let p2 = Point { x: 10.0, y: 10.0 };
+        let mut result = Point::default();
+        
+        point_midpoint(&p1, &p2, &mut result);
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, 0.0);
+    }
+
+    #[test]
+    fn test_counter_negative_add() {
+        let mut counter = Counter::default();
+        
+        counter_add(&mut counter, -100);
+        assert_eq!(counter.value, -100);
+    }
+}
