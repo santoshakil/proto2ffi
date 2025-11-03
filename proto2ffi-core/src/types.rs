@@ -24,7 +24,7 @@ pub struct Field {
     pub options: Vec<FieldOption>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FieldType {
     Int32,
     Int64,
