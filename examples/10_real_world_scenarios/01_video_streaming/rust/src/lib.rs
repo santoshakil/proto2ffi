@@ -231,3 +231,176 @@ pub extern "C" fn video_pool_stats() -> PoolStats {
         compressed_capacity: COMPRESSED_FRAME_POOL.capacity(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_video_calculate_bitrate() {
+        let bitrate = video_calculate_bitrate(1000, 1_000_000);
+        assert_eq!(bitrate, 8000);
+
+        let bitrate_zero = video_calculate_bitrate(1000, 0);
+        assert_eq!(bitrate_zero, 0);
+    }
+
+    #[test]
+    fn test_video_calculate_bitrate_high_values() {
+        let bitrate = video_calculate_bitrate(10_000_000, 1_000_000);
+        assert_eq!(bitrate, 80_000_000);
+    }
+
+    #[test]
+    fn test_video_sync_timestamps() {
+        let sync = video_sync_timestamps(1000, 900, 800, 950);
+        assert_eq!(sync.presentation_time, 1000);
+        assert_eq!(sync.decode_time, 900);
+        assert_eq!(sync.capture_time, 800);
+        assert_eq!(sync.render_time, 950);
+        assert_eq!(sync.av_offset_us, 50);
+    }
+
+    #[test]
+    fn test_video_detect_frame_drop() {
+        assert!(video_detect_frame_drop(10, 8));
+        assert!(!video_detect_frame_drop(10, 10));
+    }
+
+    #[test]
+    fn test_video_update_statistics() {
+        video_reset_statistics();
+        video_update_statistics(100, 50000, 5, 1_000_000_000);
+        let stats = video_get_statistics();
+        assert_eq!(stats.frames_processed, 100);
+        assert_eq!(stats.bytes_processed, 50000);
+        assert_eq!(stats.frames_dropped, 5);
+    }
+
+    #[test]
+    fn test_video_reset_statistics() {
+        video_update_statistics(100, 50000, 5, 1_000_000_000);
+        video_reset_statistics();
+        let stats = video_get_statistics();
+        assert_eq!(stats.frames_processed, 0);
+        assert_eq!(stats.bytes_processed, 0);
+        assert_eq!(stats.frames_dropped, 0);
+    }
+
+    #[test]
+    fn test_video_create_frame_metadata() {
+        let ptr = video_create_frame_metadata(1000, 2000, 1900, 1, 42, true, 1920, 1080, 5000000);
+        assert!(!ptr.is_null());
+
+        unsafe {
+            assert_eq!((*ptr).timestamp_us, 1000);
+            assert_eq!((*ptr).pts, 2000);
+            assert_eq!((*ptr).dts, 1900);
+            assert_eq!((*ptr).frame_type, 1);
+            assert_eq!((*ptr).frame_number, 42);
+            assert_eq!((*ptr).keyframe, 1);
+            assert_eq!((*ptr).width, 1920);
+            assert_eq!((*ptr).height, 1080);
+            assert_eq!((*ptr).bitrate, 5000000);
+        }
+
+        video_free_frame_metadata(ptr);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_video_compress_frame() {
+        let y_data = vec![100u32; 100];
+        let u_data = vec![50u32; 50];
+        let v_data = vec![50u32; 50];
+
+        let ptr = video_compress_frame(
+            y_data.as_ptr(),
+            y_data.len() as u32,
+            u_data.as_ptr(),
+            u_data.len() as u32,
+            v_data.as_ptr(),
+            v_data.len() as u32,
+            320,
+            240,
+            1000000,
+            85.0,
+        );
+
+        assert!(!ptr.is_null());
+
+        unsafe {
+            assert!((*ptr).data_count > 0);
+            assert_eq!((*ptr).metadata.width, 320);
+            assert_eq!((*ptr).metadata.height, 240);
+            assert_eq!((*ptr).metadata.bitrate, 1000000);
+        }
+
+        video_free_compressed_frame(ptr);
+    }
+
+    #[test]
+    fn test_video_calculate_jitter() {
+        let timestamps = vec![1000u64, 2000, 3000, 4000, 5000];
+        let jitter = video_calculate_jitter(timestamps.as_ptr(), timestamps.len() as u32);
+        assert!(jitter >= 0.0);
+    }
+
+    #[test]
+    fn test_video_calculate_jitter_empty() {
+        let timestamps = vec![1000u64];
+        let jitter = video_calculate_jitter(timestamps.as_ptr(), timestamps.len() as u32);
+        assert_eq!(jitter, 0.0);
+    }
+
+    #[test]
+    fn test_video_calculate_jitter_null() {
+        let jitter = video_calculate_jitter(std::ptr::null(), 5);
+        assert_eq!(jitter, 0.0);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_video_pool_stats() {
+        let stats = video_pool_stats();
+        assert!(stats.metadata_capacity > 0);
+        assert!(stats.compressed_capacity > 0);
+    }
+
+    #[test]
+    fn test_video_free_null_pointers() {
+        video_free_frame_metadata(std::ptr::null_mut());
+        video_free_compressed_frame(std::ptr::null_mut());
+    }
+
+    #[test]
+    fn test_video_multiple_frame_allocations() {
+        let ptr1 = video_create_frame_metadata(1000, 2000, 1900, 1, 1, true, 1920, 1080, 5000000);
+        let ptr2 = video_create_frame_metadata(2000, 3000, 2900, 1, 2, false, 1920, 1080, 5000000);
+
+        assert!(!ptr1.is_null());
+        assert!(!ptr2.is_null());
+        assert_ne!(ptr1, ptr2);
+
+        video_free_frame_metadata(ptr1);
+        video_free_frame_metadata(ptr2);
+    }
+
+    #[test]
+    fn test_video_sync_timestamps_drift() {
+        let sync = video_sync_timestamps(1000, 1100, 800, 950);
+        assert!(sync.drift_compensation > 0);
+    }
+
+    #[test]
+    fn test_video_statistics_incremental() {
+        video_reset_statistics();
+        video_update_statistics(50, 25000, 2, 500_000_000);
+        video_update_statistics(50, 25000, 3, 500_000_000);
+
+        let stats = video_get_statistics();
+        assert_eq!(stats.frames_processed, 100);
+        assert_eq!(stats.bytes_processed, 50000);
+        assert_eq!(stats.frames_dropped, 5);
+    }
+}

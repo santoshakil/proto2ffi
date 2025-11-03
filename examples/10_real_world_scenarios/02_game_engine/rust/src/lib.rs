@@ -242,3 +242,203 @@ pub extern "C" fn game_update_frame_stats(
 pub extern "C" fn game_get_frame_stats() -> FrameStats {
     *FRAME_STATS.lock().unwrap()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_game_create_entity() {
+        let name = b"Player\0";
+        let ptr = game_create_entity(1, name.as_ptr(), name.len() as u32 - 1);
+        assert!(!ptr.is_null());
+
+        unsafe {
+            assert_eq!((*ptr).entity_id, 1);
+            assert_eq!((*ptr).active, 1);
+            assert_eq!((*ptr).component_count, 0);
+        }
+
+        game_free_entity(ptr);
+    }
+
+    #[test]
+    fn test_game_create_transform() {
+        let ptr = game_create_transform(10.0, 20.0, 30.0);
+        assert!(!ptr.is_null());
+
+        unsafe {
+            assert_eq!((*ptr).position.x, 10.0);
+            assert_eq!((*ptr).position.y, 20.0);
+            assert_eq!((*ptr).position.z, 30.0);
+            assert_eq!((*ptr).scale.x, 1.0);
+            assert_eq!((*ptr).rotation.w, 1.0);
+        }
+
+        game_free_transform(ptr);
+    }
+
+    #[test]
+    fn test_game_set_rotation() {
+        let ptr = game_create_transform(0.0, 0.0, 0.0);
+        game_set_rotation(ptr, 0.0, 0.0, 0.0);
+
+        unsafe {
+            assert!(((*ptr).rotation.w - 1.0).abs() < 0.001);
+        }
+
+        game_free_transform(ptr);
+    }
+
+    #[test]
+    fn test_game_create_rigidbody() {
+        let ptr = game_create_rigidbody(10.0, true);
+        assert!(!ptr.is_null());
+
+        unsafe {
+            assert_eq!((*ptr).mass, 10.0);
+            assert_eq!((*ptr).use_gravity, 1);
+            assert_eq!((*ptr).velocity.x, 0.0);
+        }
+
+        game_free_rigidbody(ptr);
+    }
+
+    #[test]
+    fn test_game_apply_force() {
+        let ptr = game_create_rigidbody(2.0, false);
+        game_apply_force(ptr, 10.0, 0.0, 0.0);
+
+        unsafe {
+            assert_eq!((*ptr).velocity.x, 5.0);
+        }
+
+        game_free_rigidbody(ptr);
+    }
+
+    #[test]
+    fn test_game_apply_force_zero_mass() {
+        let ptr = game_create_rigidbody(0.0, false);
+        game_apply_force(ptr, 10.0, 0.0, 0.0);
+
+        unsafe {
+            assert_eq!((*ptr).velocity.x, 0.0);
+        }
+
+        game_free_rigidbody(ptr);
+    }
+
+    #[test]
+    fn test_game_physics_step() {
+        let ptr = game_create_rigidbody(1.0, true);
+        unsafe {
+            (*ptr).velocity.x = 10.0;
+        }
+
+        game_physics_step(ptr, 1, 0.016);
+
+        unsafe {
+            assert!((*ptr).velocity.y < 0.0);
+        }
+
+        game_free_rigidbody(ptr);
+    }
+
+    #[test]
+    fn test_game_update_transform() {
+        let transform = game_create_transform(0.0, 0.0, 0.0);
+        let body = game_create_rigidbody(1.0, false);
+
+        unsafe {
+            (*body).velocity.x = 10.0;
+            (*body).velocity.y = 5.0;
+        }
+
+        game_update_transform(transform, body, 1.0);
+
+        unsafe {
+            assert_eq!((*transform).position.x, 10.0);
+            assert_eq!((*transform).position.y, 5.0);
+        }
+
+        game_free_transform(transform);
+        game_free_rigidbody(body);
+    }
+
+    #[test]
+    fn test_game_vector_length() {
+        let v = Vector3 { x: 3.0, y: 4.0, z: 0.0 };
+        let len = game_vector_length(v);
+        assert_eq!(len, 5.0);
+    }
+
+    #[test]
+    fn test_game_vector_normalize() {
+        let mut v = Vector3 { x: 3.0, y: 4.0, z: 0.0 };
+        game_vector_normalize(&mut v);
+        let len = game_vector_length(v);
+        assert!((len - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_game_update_frame_stats() {
+        game_update_frame_stats(100, 16666, 50, 200);
+        let stats = game_get_frame_stats();
+        assert_eq!(stats.frame_number, 100);
+        assert_eq!(stats.frame_time_us, 16666);
+        assert_eq!(stats.draw_calls, 50);
+        assert_eq!(stats.active_entities, 200);
+        assert!(stats.fps > 59.0 && stats.fps < 61.0);
+    }
+
+    #[test]
+    fn test_game_free_null_pointers() {
+        game_free_entity(std::ptr::null_mut());
+        game_free_transform(std::ptr::null_mut());
+        game_free_rigidbody(std::ptr::null_mut());
+    }
+
+    #[test]
+    fn test_game_vector_normalize_zero() {
+        let mut v = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        game_vector_normalize(&mut v);
+        assert_eq!(v.x, 0.0);
+        assert_eq!(v.y, 0.0);
+        assert_eq!(v.z, 0.0);
+    }
+
+    #[test]
+    fn test_game_set_rotation_null() {
+        game_set_rotation(std::ptr::null_mut(), 0.0, 0.0, 0.0);
+    }
+
+    #[test]
+    fn test_game_apply_force_null() {
+        game_apply_force(std::ptr::null_mut(), 10.0, 0.0, 0.0);
+    }
+
+    #[test]
+    fn test_game_update_transform_null() {
+        let transform = game_create_transform(0.0, 0.0, 0.0);
+        game_update_transform(transform, std::ptr::null(), 1.0);
+        game_free_transform(transform);
+    }
+
+    #[test]
+    fn test_game_physics_step_null() {
+        game_physics_step(std::ptr::null_mut(), 0, 0.016);
+    }
+
+    #[test]
+    fn test_game_multiple_entities() {
+        let ptr1 = game_create_entity(1, std::ptr::null(), 0);
+        let ptr2 = game_create_entity(2, std::ptr::null(), 0);
+
+        assert!(!ptr1.is_null());
+        assert!(!ptr2.is_null());
+        assert_ne!(ptr1, ptr2);
+
+        game_free_entity(ptr1);
+        game_free_entity(ptr2);
+    }
+}

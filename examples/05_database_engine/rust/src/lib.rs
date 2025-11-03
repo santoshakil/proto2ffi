@@ -767,3 +767,231 @@ pub extern "C" fn db_acquire_lock(lock_ptr: *mut LockInfo) -> i32 {
 
     0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_database_engine_new() {
+        let engine = DatabaseEngine::new();
+        assert_eq!(engine.tables.len(), 0);
+        assert_eq!(engine.indexes.len(), 0);
+        assert_eq!(engine.transactions.len(), 0);
+        assert_eq!(engine.next_tx_id, 1);
+        assert_eq!(engine.stats.total_queries, 0);
+    }
+
+    #[test]
+    fn test_create_table() {
+        let mut engine = DatabaseEngine::new();
+        let columns = vec![
+            ("id".to_string(), DataType::INTEGER),
+            ("name".to_string(), DataType::TEXT),
+        ];
+        engine.create_table("users", columns);
+        assert_eq!(engine.tables.len(), 1);
+        assert!(engine.tables.contains_key("users"));
+    }
+
+    #[test]
+    fn test_insert_row_success() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_table("users", vec![
+            ("id".to_string(), DataType::INTEGER),
+            ("name".to_string(), DataType::TEXT),
+        ]);
+
+        let values = vec![
+            ValueData::Integer(1),
+            ValueData::Text("Alice".to_string()),
+        ];
+
+        let result = engine.insert_row("users", values);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 1);
+        assert_eq!(engine.stats.page_writes, 1);
+    }
+
+    #[test]
+    fn test_insert_row_table_not_found() {
+        let mut engine = DatabaseEngine::new();
+        let values = vec![ValueData::Integer(1)];
+        let result = engine.insert_row("nonexistent", values);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_insert_row_column_mismatch() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_table("users", vec![
+            ("id".to_string(), DataType::INTEGER),
+            ("name".to_string(), DataType::TEXT),
+        ]);
+
+        let values = vec![ValueData::Integer(1)];
+        let result = engine.insert_row("users", values);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_select_rows() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_table("users", vec![
+            ("id".to_string(), DataType::INTEGER),
+        ]);
+
+        engine.insert_row("users", vec![ValueData::Integer(1)]).unwrap();
+        engine.insert_row("users", vec![ValueData::Integer(2)]).unwrap();
+        engine.insert_row("users", vec![ValueData::Integer(3)]).unwrap();
+
+        let result = engine.select_rows("users", None);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_select_rows_with_limit() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_table("users", vec![
+            ("id".to_string(), DataType::INTEGER),
+        ]);
+
+        for i in 1..=10 {
+            engine.insert_row("users", vec![ValueData::Integer(i)]).unwrap();
+        }
+
+        let result = engine.select_rows("users", Some(5));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 5);
+    }
+
+    #[test]
+    fn test_begin_transaction() {
+        let mut engine = DatabaseEngine::new();
+        let tx_id = engine.begin_transaction(IsolationLevel::READ_COMMITTED);
+        assert_eq!(tx_id, 1);
+        assert_eq!(engine.transactions.len(), 1);
+        assert_eq!(engine.stats.total_transactions, 1);
+    }
+
+    #[test]
+    fn test_commit_transaction() {
+        let mut engine = DatabaseEngine::new();
+        let tx_id = engine.begin_transaction(IsolationLevel::READ_COMMITTED);
+        let result = engine.commit_transaction(tx_id);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_rollback_transaction() {
+        let mut engine = DatabaseEngine::new();
+        let tx_id = engine.begin_transaction(IsolationLevel::READ_COMMITTED);
+        let result = engine.rollback_transaction(tx_id);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_commit_nonexistent_transaction() {
+        let mut engine = DatabaseEngine::new();
+        let result = engine.commit_transaction(999);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_create_index() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_index(
+            "idx_users_id",
+            "users",
+            vec!["id".to_string()],
+            IndexType::BTREE,
+            true,
+        );
+        assert_eq!(engine.indexes.len(), 1);
+    }
+
+    #[test]
+    fn test_execute_query_create_table() {
+        let mut engine = DatabaseEngine::new();
+        let result = engine.execute_query("CREATE TABLE users");
+        assert!(result.is_ok());
+        assert_eq!(engine.stats.total_queries, 1);
+    }
+
+    #[test]
+    fn test_execute_query_unsupported() {
+        let mut engine = DatabaseEngine::new();
+        let result = engine.execute_query("DELETE FROM users");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_value_data_conversions() {
+        let mut dst = Value::default();
+
+        value_to_ffi(&ValueData::Integer(42), &mut dst);
+        assert_eq!(dst.r#type, DataType::INTEGER as u32);
+        assert_eq!(dst.int_value, 42);
+
+        value_to_ffi(&ValueData::Real(3.14), &mut dst);
+        assert_eq!(dst.r#type, DataType::REAL as u32);
+        assert_eq!(dst.real_value, 3.14);
+
+        value_to_ffi(&ValueData::Boolean(true), &mut dst);
+        assert_eq!(dst.r#type, DataType::BOOLEAN as u32);
+        assert_eq!(dst.bool_value, 1);
+
+        value_to_ffi(&ValueData::Null, &mut dst);
+        assert_eq!(dst.r#type, DataType::NULL as u32);
+    }
+
+    #[test]
+    fn test_value_from_ffi() {
+        let mut src = Value::default();
+        src.r#type = DataType::INTEGER as u32;
+        src.int_value = 100;
+
+        match value_from_ffi(&src) {
+            ValueData::Integer(v) => assert_eq!(v, 100),
+            _ => panic!("Expected Integer"),
+        }
+    }
+
+    #[test]
+    fn test_db_init() {
+        db_init();
+        let db = DB.read().unwrap();
+        assert!(db.is_some());
+    }
+
+    #[test]
+    fn test_copy_str_to_array() {
+        let mut dst = [0u8; 10];
+        copy_str_to_array("hello", &mut dst);
+        assert_eq!(&dst[0..5], b"hello");
+        assert_eq!(dst[5], 0);
+    }
+
+    #[test]
+    fn test_multiple_transactions() {
+        let mut engine = DatabaseEngine::new();
+        let tx1 = engine.begin_transaction(IsolationLevel::READ_COMMITTED);
+        let tx2 = engine.begin_transaction(IsolationLevel::SERIALIZABLE);
+        assert_eq!(tx1, 1);
+        assert_eq!(tx2, 2);
+        assert_eq!(engine.transactions.len(), 2);
+    }
+
+    #[test]
+    fn test_stats_tracking() {
+        let mut engine = DatabaseEngine::new();
+        engine.create_table("test", vec![("id".to_string(), DataType::INTEGER)]);
+
+        engine.execute_query("CREATE TABLE users").ok();
+        engine.execute_query("SELECT * FROM test").ok();
+
+        assert!(engine.stats.total_queries >= 2);
+        assert!(!engine.stats.query_times.is_empty());
+    }
+}

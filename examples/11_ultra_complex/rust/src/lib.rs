@@ -918,4 +918,204 @@ mod tests {
         let idx = binary_search_i64(arr.as_ptr(), arr.len(), 5);
         assert_eq!(idx, 2);
     }
+
+    #[test]
+    fn test_binary_search_not_found() {
+        let arr = vec![1, 2, 5, 8, 9];
+        let idx = binary_search_i64(arr.as_ptr(), arr.len(), 100);
+        assert_eq!(idx, -1);
+    }
+
+    #[test]
+    fn test_linear_search() {
+        let arr = vec![5, 2, 8, 1, 9];
+        let idx = linear_search_i64(arr.as_ptr(), arr.len(), 8);
+        assert_eq!(idx, 2);
+    }
+
+    #[test]
+    fn test_quicksort() {
+        let mut arr = vec![5, 2, 8, 1, 9];
+        quicksort_i64(arr.as_mut_ptr(), 0, 4);
+        assert_eq!(arr, vec![1, 2, 5, 8, 9]);
+    }
+
+    #[test]
+    fn test_merge_sort() {
+        let mut arr = vec![5, 2, 8, 1, 9];
+        merge_sort_i64(arr.as_mut_ptr(), arr.len());
+        assert_eq!(arr, vec![1, 2, 5, 8, 9]);
+    }
+
+    #[test]
+    fn test_heap_sort() {
+        let mut arr = vec![5, 2, 8, 1, 9];
+        heap_sort_i64(arr.as_mut_ptr(), arr.len());
+        assert_eq!(arr, vec![1, 2, 5, 8, 9]);
+    }
+
+    #[test]
+    fn test_sort_f64() {
+        let mut arr = vec![5.5, 2.2, 8.8, 1.1, 9.9];
+        sort_f64_array(arr.as_mut_ptr(), arr.len());
+        assert_eq!(arr, vec![1.1, 2.2, 5.5, 8.8, 9.9]);
+    }
+
+    #[test]
+    fn test_vector3_add() {
+        let a = Vector3 { x: 1.0, y: 2.0, z: 3.0 };
+        let b = Vector3 { x: 4.0, y: 5.0, z: 6.0 };
+        let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        vector3_add(&a, &b, &mut result);
+        assert_eq!(result.x, 5.0);
+        assert_eq!(result.y, 7.0);
+        assert_eq!(result.z, 9.0);
+    }
+
+    #[test]
+    fn test_vector3_sub() {
+        let a = Vector3 { x: 4.0, y: 5.0, z: 6.0 };
+        let b = Vector3 { x: 1.0, y: 2.0, z: 3.0 };
+        let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        vector3_sub(&a, &b, &mut result);
+        assert_eq!(result.x, 3.0);
+        assert_eq!(result.y, 3.0);
+        assert_eq!(result.z, 3.0);
+    }
+
+    #[test]
+    fn test_vector3_dot() {
+        let a = Vector3 { x: 1.0, y: 2.0, z: 3.0 };
+        let b = Vector3 { x: 4.0, y: 5.0, z: 6.0 };
+        let dot = vector3_dot(&a, &b);
+        assert_eq!(dot, 32.0);
+    }
+
+    #[test]
+    fn test_vector3_cross() {
+        let a = Vector3 { x: 1.0, y: 0.0, z: 0.0 };
+        let b = Vector3 { x: 0.0, y: 1.0, z: 0.0 };
+        let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        vector3_cross(&a, &b, &mut result);
+        assert_eq!(result.z, 1.0);
+    }
+
+    #[test]
+    fn test_vector3_length() {
+        let v = Vector3 { x: 3.0, y: 4.0, z: 0.0 };
+        let len = vector3_length(&v);
+        assert_eq!(len, 5.0);
+    }
+
+    #[test]
+    fn test_vector3_normalize() {
+        let v = Vector3 { x: 3.0, y: 4.0, z: 0.0 };
+        let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        vector3_normalize(&v, &mut result);
+        let len = vector3_length(&result);
+        assert!((len - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_vector3_scale() {
+        let v = Vector3 { x: 1.0, y: 2.0, z: 3.0 };
+        let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+        vector3_scale(&v, 2.0, &mut result);
+        assert_eq!(result.x, 2.0);
+        assert_eq!(result.y, 4.0);
+        assert_eq!(result.z, 6.0);
+    }
+
+    #[test]
+    fn test_matrix4x4_identity() {
+        let mut m = Matrix4x4::default();
+        matrix4x4_identity(&mut m);
+        assert_eq!(m.m00, 1.0);
+        assert_eq!(m.m11, 1.0);
+        assert_eq!(m.m22, 1.0);
+        assert_eq!(m.m33, 1.0);
+    }
+
+    #[test]
+    fn test_fibonacci() {
+        assert_eq!(fibonacci(0), 0);
+        assert_eq!(fibonacci(1), 1);
+        assert_eq!(fibonacci(10), 55);
+    }
+
+    #[test]
+    fn test_factorial() {
+        assert_eq!(factorial(0), 1);
+        assert_eq!(factorial(5), 120);
+    }
+
+    #[test]
+    fn test_prime_count() {
+        assert_eq!(prime_count(10), 4);
+        assert_eq!(prime_count(0), 0);
+    }
+
+    #[test]
+    fn test_memory_intensive() {
+        let result = memory_intensive_operation(100);
+        assert!(result > 0);
+    }
+
+    #[test]
+    fn test_matrix_multiply() {
+        let a = vec![1.0, 2.0, 3.0, 4.0];
+        let b = vec![5.0, 6.0, 7.0, 8.0];
+        let mut result = vec![0.0; 4];
+        assert!(matrix_multiply_f64(a.as_ptr(), 2, 2, b.as_ptr(), 2, 2, result.as_mut_ptr()));
+    }
+
+    #[test]
+    fn test_pearson_correlation() {
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let y = vec![2.0, 4.0, 6.0, 8.0, 10.0];
+        let corr = pearson_correlation(x.as_ptr(), y.as_ptr(), 5);
+        assert!((corr - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_linear_regression() {
+        let x = vec![1.0, 2.0, 3.0];
+        let y = vec![2.0, 4.0, 6.0];
+        let mut slope = 0.0;
+        let mut intercept = 0.0;
+        linear_regression(x.as_ptr(), y.as_ptr(), 3, &mut slope, &mut intercept);
+        assert!((slope - 2.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_fft_magnitude() {
+        let real = vec![1.0, 2.0, 3.0];
+        let imag = vec![0.0, 0.0, 0.0];
+        let mut mag = vec![0.0; 3];
+        fft_magnitude(real.as_ptr(), imag.as_ptr(), 3, mag.as_mut_ptr());
+        assert_eq!(mag[0], 1.0);
+        assert_eq!(mag[1], 2.0);
+        assert_eq!(mag[2], 3.0);
+    }
+
+    #[test]
+    fn test_convolution() {
+        let signal = vec![1.0, 2.0, 3.0];
+        let kernel = vec![1.0, 1.0];
+        let mut result = vec![0.0; 4];
+        convolution_1d(signal.as_ptr(), 3, kernel.as_ptr(), 2, result.as_mut_ptr());
+        assert_eq!(result[0], 1.0);
+        assert_eq!(result[1], 3.0);
+        assert_eq!(result[2], 5.0);
+        assert_eq!(result[3], 3.0);
+    }
+
+    #[test]
+    fn test_quaternion_normalize() {
+        let q = Quaternion { x: 1.0, y: 1.0, z: 1.0, w: 1.0 };
+        let mut result = Quaternion { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        quaternion_normalize(&q, &mut result);
+        let len = (result.x*result.x + result.y*result.y + result.z*result.z + result.w*result.w).sqrt();
+        assert!((len - 1.0).abs() < 0.001);
+    }
 }
