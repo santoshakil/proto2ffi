@@ -69,6 +69,34 @@ fn calculate_message_layout(
     default_alignment: usize,
     message_sizes: &HashMap<String, (usize, usize)>,
 ) -> Result<MessageLayout> {
+    use std::collections::HashSet;
+
+    let mut field_numbers = HashSet::new();
+    let mut field_names = HashSet::new();
+
+    for field in &message.fields {
+        if field.number < 1 || field.number > 536870911 {
+            return Err(Proto2FFIError::InvalidFieldNumber {
+                message: message.name.clone(),
+                field_number: field.number as i32,
+            });
+        }
+
+        if !field_numbers.insert(field.number) {
+            return Err(Proto2FFIError::DuplicateFieldNumber {
+                message: message.name.clone(),
+                field_number: field.number as i32,
+            });
+        }
+
+        if !field_names.insert(field.name.clone()) {
+            return Err(Proto2FFIError::DuplicateFieldName {
+                message: message.name.clone(),
+                field_name: field.name.clone(),
+            });
+        }
+    }
+
     let mut options_map = HashMap::new();
     for opt in &message.options {
         options_map.insert(opt.name.clone(), opt.value.clone());
