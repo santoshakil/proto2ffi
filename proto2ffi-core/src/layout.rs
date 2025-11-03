@@ -244,20 +244,10 @@ fn get_type_info(
                 base_align.max(4),
             ))
         } else {
-            let dart_ffi_type = if base_rust.starts_with('[') {
-                let inner_element = base_rust.trim_start_matches('[')
-                    .split(';')
-                    .next()
-                    .unwrap_or("u8")
-                    .trim();
-                rust_to_dart_ffi_type(inner_element)
-            } else {
-                rust_to_dart_ffi_type(base_rust.trim_start_matches("external "))
-            };
             Ok((
                 format!("*const {}", base_rust),
                 format!("List<{}>", base_dart),
-                format!("external ffi.Pointer<{}>", dart_ffi_type),
+                "@ffi.Pointer()".to_string(),
                 format!("{}*", base_c),
                 16,
                 8,

@@ -7,10 +7,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 50000,
-      "duration_micros": 28265,
-      "ops_per_sec": 1768938.369161234,
-      "latency_ns": 565.31082,
-      "throughput_mb_s": 9420.158246418316,
+      "duration_micros": 172412,
+      "ops_per_sec": 290001.5442582232,
+      "latency_ns": 3448.2575,
+      "throughput_mb_s": 1544.3502646807844,
       "memory_allocated_mb": 266.265869140625
     },
     {
@@ -20,10 +20,10 @@
       "message_type": "Comment",
       "message_size_bytes": 2056,
       "operations": 500000,
-      "duration_micros": 253021,
-      "ops_per_sec": 1976117.6303780659,
-      "latency_ns": 506.04275,
-      "throughput_mb_s": 3874.681327874473,
+      "duration_micros": 437438,
+      "ops_per_sec": 1143017.8185047726,
+      "latency_ns": 874.877,
+      "throughput_mb_s": 2241.177210660756,
       "memory_allocated_mb": 980.377197265625
     },
     {
@@ -33,10 +33,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 1000000,
-      "duration_micros": 7538,
-      "ops_per_sec": 132649445.8503075,
-      "latency_ns": 7.538667,
-      "throughput_mb_s": 5060.174783718395,
+      "duration_micros": 12882,
+      "ops_per_sec": 77622425.11861676,
+      "latency_ns": 12.882875,
+      "throughput_mb_s": 2961.060528511687,
       "memory_allocated_mb": 38.14697265625
     },
     {
@@ -46,10 +46,10 @@
       "message_type": "NewsFeedItem",
       "message_size_bytes": 56,
       "operations": 100000,
-      "duration_micros": 1337,
-      "ops_per_sec": 74759368.283338,
-      "latency_ns": 13.37625,
-      "throughput_mb_s": 3992.5810087842256,
+      "duration_micros": 1347,
+      "ops_per_sec": 74220701.19265245,
+      "latency_ns": 13.47333,
+      "throughput_mb_s": 3963.8130824933405,
       "memory_allocated_mb": 5.340576171875
     },
     {
@@ -59,10 +59,10 @@
       "message_type": "Message",
       "message_size_bytes": 4040,
       "operations": 500000,
-      "duration_micros": 315846,
-      "ops_per_sec": 1583048.2983634959,
-      "latency_ns": 631.692666,
-      "throughput_mb_s": 6099.238515270732,
+      "duration_micros": 1108952,
+      "ops_per_sec": 450875.75301819074,
+      "latency_ns": 2217.905916,
+      "throughput_mb_s": 1737.154047196856,
       "memory_allocated_mb": 1926.422119140625
     },
     {
@@ -72,10 +72,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 10000000,
-      "duration_micros": 9181,
-      "ops_per_sec": 1089146653.5969067,
-      "latency_ns": 0.91815,
-      "throughput_mb_s": 41547.6476134074,
+      "duration_micros": 9090,
+      "ops_per_sec": 1100019250.336881,
+      "latency_ns": 0.909075,
+      "throughput_mb_s": 41962.40426394962,
       "memory_allocated_mb": 381.4697265625
     },
     {
@@ -85,10 +85,10 @@
       "message_type": "UserProfile",
       "message_size_bytes": 656,
       "operations": 1000000,
-      "duration_micros": 7357,
-      "ops_per_sec": 135910338.31888697,
-      "latency_ns": 7.357792,
-      "throughput_mb_s": 85026.91453665719,
+      "duration_micros": 8385,
+      "ops_per_sec": 119260584.37686345,
+      "latency_ns": 8.385,
+      "throughput_mb_s": 74610.65611955874,
       "memory_allocated_mb": 625.6103515625
     },
     {
@@ -98,10 +98,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 100000,
-      "duration_micros": 6215,
-      "ops_per_sec": 16089351.246787962,
-      "latency_ns": 62.15291,
-      "throughput_mb_s": 85680.9018726959,
+      "duration_micros": 6333,
+      "ops_per_sec": 15790097.808602856,
+      "latency_ns": 63.33083,
+      "throughput_mb_s": 84087.28233646236,
       "memory_allocated_mb": 532.53173828125
     },
     {
@@ -111,10 +111,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 1000000,
-      "duration_micros": 68947,
-      "ops_per_sec": 14503894.295618374,
-      "latency_ns": 68.947,
-      "throughput_mb_s": 553.2796591040945,
+      "duration_micros": 1760274,
+      "ops_per_sec": 568093.1882205107,
+      "latency_ns": 1760.274583,
+      "throughput_mb_s": 21.671035317249707,
       "memory_allocated_mb": 38.14697265625
     },
     {
@@ -124,10 +124,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 50000,
-      "duration_micros": 38169,
-      "ops_per_sec": 1309937.8434493283,
-      "latency_ns": 763.395,
-      "throughput_mb_s": 6975.834768124627,
+      "duration_micros": 4665165,
+      "ops_per_sec": 10717.734146778546,
+      "latency_ns": 93303.30332,
+      "throughput_mb_s": 57.07533595620289,
       "memory_allocated_mb": 266.265869140625
     },
     {
@@ -137,10 +137,10 @@
       "message_type": "u64",
       "message_size_bytes": 8,
       "operations": 10000000,
-      "duration_micros": 9554,
-      "ops_per_sec": 1046581675.8619332,
-      "latency_ns": 0.9554916,
-      "throughput_mb_s": 7984.7845143274935,
+      "duration_micros": 52263,
+      "ops_per_sec": 191339496.05960226,
+      "latency_ns": 5.2263125,
+      "throughput_mb_s": 1459.8045048492604,
       "memory_allocated_mb": 76.2939453125
     },
     {
@@ -150,10 +150,10 @@
       "message_type": "UserProfile",
       "message_size_bytes": 656,
       "operations": 10000000,
-      "duration_micros": 2913,
-      "ops_per_sec": 3432838741.3702726,
-      "latency_ns": 0.2913041,
-      "throughput_mb_s": 2147619.4518460263,
+      "duration_micros": 7312,
+      "ops_per_sec": 1367490137.319257,
+      "latency_ns": 0.7312667,
+      "throughput_mb_s": 855515.9855665518,
       "memory_allocated_mb": 6256.103515625
     },
     {
@@ -163,10 +163,10 @@
       "message_type": "UserProfile",
       "message_size_bytes": 656,
       "operations": 10000000,
-      "duration_micros": 2875,
-      "ops_per_sec": 3477908844.704762,
-      "latency_ns": 0.2875291,
-      "throughput_mb_s": 2175815.7750380747,
+      "duration_micros": 5578,
+      "ops_per_sec": 1792556409.5095117,
+      "latency_ns": 0.5578625,
+      "throughput_mb_s": 1121441.8455488584,
       "memory_allocated_mb": 6256.103515625
     },
     {
@@ -176,10 +176,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 1000000,
-      "duration_micros": 15374,
-      "ops_per_sec": 65042765.6183941,
-      "latency_ns": 15.3745,
-      "throughput_mb_s": 2481.1846015317574,
+      "duration_micros": 24139,
+      "ops_per_sec": 41425878.746452905,
+      "latency_ns": 24.1395,
+      "throughput_mb_s": 1580.2718638020672,
       "memory_allocated_mb": 38.14697265625
     },
     {
@@ -189,10 +189,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 100000,
-      "duration_micros": 2255,
-      "ops_per_sec": 44327046.72381014,
-      "latency_ns": 22.55959,
-      "throughput_mb_s": 236055.592447048,
+      "duration_micros": 5545,
+      "ops_per_sec": 18031553.054058235,
+      "latency_ns": 55.45834,
+      "throughput_mb_s": 96023.74291788213,
       "memory_allocated_mb": 532.53173828125
     },
     {
@@ -202,10 +202,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 50000,
-      "duration_micros": 26213,
-      "ops_per_sec": 1907420.1581579389,
-      "latency_ns": 524.26834,
-      "throughput_mb_s": 10157.61772456544,
+      "duration_micros": 154316,
+      "ops_per_sec": 324010.1213763299,
+      "latency_ns": 3086.32334,
+      "throughput_mb_s": 1725.4567315725578,
       "memory_allocated_mb": 266.265869140625
     },
     {
@@ -215,10 +215,10 @@
       "message_type": "Comment",
       "message_size_bytes": 2056,
       "operations": 500000,
-      "duration_micros": 155345,
-      "ops_per_sec": 3218627.6867164704,
-      "latency_ns": 310.691418,
-      "throughput_mb_s": 6310.938381089271,
+      "duration_micros": 663956,
+      "ops_per_sec": 753060.9574605279,
+      "latency_ns": 1327.91375,
+      "throughput_mb_s": 1476.5675816906407,
       "memory_allocated_mb": 980.377197265625
     },
     {
@@ -228,10 +228,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 1000000,
-      "duration_micros": 519,
-      "ops_per_sec": 1924001924.0019238,
-      "latency_ns": 0.51975,
-      "throughput_mb_s": 73394.84878547378,
+      "duration_micros": 1725,
+      "ops_per_sec": 579612030.8910028,
+      "latency_ns": 1.725292,
+      "throughput_mb_s": 22110.444293632612,
       "memory_allocated_mb": 38.14697265625
     },
     {
@@ -241,10 +241,10 @@
       "message_type": "Notification",
       "message_size_bytes": 304,
       "operations": 500000,
-      "duration_micros": 13524,
-      "ops_per_sec": 36970626.83697802,
-      "latency_ns": 27.0485,
-      "throughput_mb_s": 10718.412931863135,
+      "duration_micros": 117852,
+      "ops_per_sec": 4242586.874921114,
+      "latency_ns": 235.70525,
+      "throughput_mb_s": 1229.9980258712947,
       "memory_allocated_mb": 144.95849609375
     },
     {
@@ -254,10 +254,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 1000000,
-      "duration_micros": 20489,
-      "ops_per_sec": 48804987.908808276,
-      "latency_ns": 20.489709,
-      "throughput_mb_s": 1861.762539245921,
+      "duration_micros": 110624,
+      "ops_per_sec": 9039609.308085704,
+      "latency_ns": 110.62425,
+      "throughput_mb_s": 344.8337290987284,
       "memory_allocated_mb": 38.14697265625
     },
     {
@@ -267,10 +267,10 @@
       "message_type": "Reaction",
       "message_size_bytes": 40,
       "operations": 100000,
-      "duration_micros": 354,
-      "ops_per_sec": 282120871.8663424,
-      "latency_ns": 3.54458,
-      "throughput_mb_s": 10762.057184842775,
+      "duration_micros": 7542,
+      "ops_per_sec": 13258936.556386346,
+      "latency_ns": 75.42083,
+      "throughput_mb_s": 505.78829026742346,
       "memory_allocated_mb": 3.814697265625
     },
     {
@@ -280,10 +280,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 10000,
-      "duration_micros": 667,
-      "ops_per_sec": 14987829.882135706,
-      "latency_ns": 66.7208,
-      "throughput_mb_s": 79814.9510019739,
+      "duration_micros": 1092,
+      "ops_per_sec": 9155756.819436572,
+      "latency_ns": 109.2209,
+      "throughput_mb_s": 48757.31094334967,
       "memory_allocated_mb": 53.253173828125
     },
     {
@@ -293,10 +293,10 @@
       "message_type": "NewsFeedItem",
       "message_size_bytes": 56,
       "operations": 100000,
-      "duration_micros": 7541,
-      "ops_per_sec": 13259961.546111517,
-      "latency_ns": 75.415,
-      "throughput_mb_s": 708.1583467314196,
+      "duration_micros": 32297,
+      "ops_per_sec": 3096174.901929434,
+      "latency_ns": 322.97917,
+      "throughput_mb_s": 165.3535790520175,
       "memory_allocated_mb": 5.340576171875
     },
     {
@@ -306,10 +306,10 @@
       "message_type": "Post",
       "message_size_bytes": 5584,
       "operations": 50000,
-      "duration_micros": 15213,
-      "ops_per_sec": 3286599.855350167,
-      "latency_ns": 304.26582,
-      "throughput_mb_s": 17502.187340045293,
+      "duration_micros": 459119,
+      "ops_per_sec": 108904.02985488105,
+      "latency_ns": 9182.39666,
+      "throughput_mb_s": 579.9485232445295,
       "memory_allocated_mb": 266.265869140625
     },
     {
@@ -319,10 +319,10 @@
       "message_type": "Comment",
       "message_size_bytes": 2056,
       "operations": 200000,
-      "duration_micros": 47300,
-      "ops_per_sec": 4228326.055186166,
-      "latency_ns": 236.50021,
-      "throughput_mb_s": 8290.708894217261,
+      "duration_micros": 160160,
+      "ops_per_sec": 1248745.4011048276,
+      "latency_ns": 800.80375,
+      "throughput_mb_s": 2448.483032866979,
       "memory_allocated_mb": 392.15087890625
     }
   ],
@@ -331,73 +331,73 @@
       "name": "Native Dart allocation",
       "category": "comparison_dart",
       "operations": 100000,
-      "duration_micros": 3202,
-      "ops_per_sec": 31221949.03016821,
-      "latency_ns": 32.02875
+      "duration_micros": 6528,
+      "ops_per_sec": 15316966.235892307,
+      "latency_ns": 65.28708
     },
     {
       "name": "Native Dart serialization",
       "category": "comparison_dart",
       "operations": 10000,
-      "duration_micros": 1178,
-      "ops_per_sec": 8485960.402811568,
-      "latency_ns": 117.8417
+      "duration_micros": 1377,
+      "ops_per_sec": 7259528.130671506,
+      "latency_ns": 137.75
     },
     {
       "name": "Native Dart access",
       "category": "comparison_dart",
       "operations": 100000,
-      "duration_micros": 339,
-      "ops_per_sec": 294586385.9847581,
-      "latency_ns": 3.39459
+      "duration_micros": 102,
+      "ops_per_sec": 976009682.0160456,
+      "latency_ns": 1.02458
     },
     {
       "name": "JSON serialization",
       "category": "comparison_json",
       "operations": 10000,
-      "duration_micros": 1482,
-      "ops_per_sec": 6744034.22732251,
-      "latency_ns": 148.2792
+      "duration_micros": 1176,
+      "ops_per_sec": 8502801.24787111,
+      "latency_ns": 117.6083
     },
     {
       "name": "JSON deserialization",
       "category": "comparison_json",
       "operations": 10000,
-      "duration_micros": 1280,
-      "ops_per_sec": 7811480.845858391,
-      "latency_ns": 128.0167
+      "duration_micros": 1185,
+      "ops_per_sec": 8434668.850683587,
+      "latency_ns": 118.5583
     },
     {
       "name": "JSON roundtrip",
       "category": "comparison_json",
       "operations": 10000,
-      "duration_micros": 2370,
-      "ops_per_sec": 4218149.177376548,
-      "latency_ns": 237.0708
+      "duration_micros": 2234,
+      "ops_per_sec": 4475608.604447055,
+      "latency_ns": 223.4333
     },
     {
       "name": "Bincode serialization",
       "category": "comparison_bincode",
       "operations": 100000,
-      "duration_micros": 2791,
-      "ops_per_sec": 35828386.32889097,
-      "latency_ns": 27.91083
+      "duration_micros": 4425,
+      "ops_per_sec": 22595464.14133734,
+      "latency_ns": 44.25667
     },
     {
       "name": "Bincode deserialization",
       "category": "comparison_bincode",
       "operations": 100000,
-      "duration_micros": 2416,
-      "ops_per_sec": 41385024.332325056,
-      "latency_ns": 24.16333
+      "duration_micros": 4315,
+      "ops_per_sec": 23169821.585422844,
+      "latency_ns": 43.15959
     },
     {
       "name": "Bincode roundtrip",
       "category": "comparison_bincode",
       "operations": 100000,
-      "duration_micros": 4070,
-      "ops_per_sec": 24567006.510256723,
-      "latency_ns": 40.705
+      "duration_micros": 5954,
+      "ops_per_sec": 16793434.707461726,
+      "latency_ns": 59.54708
     }
   ],
   "latency_distributions": [
@@ -405,56 +405,56 @@
       "name": "FFI call latency",
       "category": "ffi_latency",
       "min_ns": 0.0,
-      "max_ns": 13459.0,
-      "mean_ns": 17.41552,
+      "max_ns": 201084.0,
+      "mean_ns": 26.67475,
       "median_ns": 0.0,
       "p50_ns": 0.0,
       "p95_ns": 42.0,
       "p99_ns": 42.0,
       "p999_ns": 84.0,
-      "stddev_ns": 64.04207962839651,
+      "stddev_ns": 1090.7740094916255,
       "samples": 100000
     },
     {
       "name": "Small allocation latency",
       "category": "allocation_latency",
       "min_ns": 0.0,
-      "max_ns": 2583.0,
-      "mean_ns": 32.3403,
+      "max_ns": 64000.0,
+      "mean_ns": 47.2544,
       "median_ns": 42.0,
       "p50_ns": 42.0,
-      "p95_ns": 42.0,
-      "p99_ns": 42.0,
-      "p999_ns": 125.0,
-      "stddev_ns": 45.293035843381986,
+      "p95_ns": 83.0,
+      "p99_ns": 84.0,
+      "p999_ns": 167.0,
+      "stddev_ns": 689.0958916440005,
       "samples": 10000
     },
     {
       "name": "Medium allocation latency",
       "category": "allocation_latency",
-      "min_ns": 0.0,
-      "max_ns": 6625.0,
-      "mean_ns": 48.6404,
+      "min_ns": 41.0,
+      "max_ns": 36667.0,
+      "mean_ns": 52.4948,
       "median_ns": 42.0,
       "p50_ns": 42.0,
       "p95_ns": 83.0,
       "p99_ns": 84.0,
-      "p999_ns": 250.0,
-      "stddev_ns": 71.35664151177528,
+      "p999_ns": 125.0,
+      "stddev_ns": 384.7376890466542,
       "samples": 10000
     },
     {
       "name": "Large allocation latency",
       "category": "allocation_latency",
       "min_ns": 83.0,
-      "max_ns": 28667.0,
-      "mean_ns": 162.3972,
+      "max_ns": 1112625.0,
+      "mean_ns": 530.8859,
       "median_ns": 166.0,
       "p50_ns": 166.0,
       "p95_ns": 167.0,
-      "p99_ns": 375.0,
-      "p999_ns": 500.0,
-      "stddev_ns": 291.655809529246,
+      "p99_ns": 209.0,
+      "p999_ns": 54292.0,
+      "stddev_ns": 16576.574054438424,
       "samples": 10000
     }
   ],
@@ -505,36 +505,36 @@
       "name": "Stack allocation (512B)",
       "category": "memory_patterns",
       "operations": 10000000,
-      "allocations_per_sec": 117180920.01669829,
-      "bytes_per_sec": 59996631048.54952,
-      "latency_ns": 8.5338125,
+      "allocations_per_sec": 88899326.06487702,
+      "bytes_per_sec": 45516454945.21703,
+      "latency_ns": 11.2486792,
       "peak_memory_mb": 4882.8125
     },
     {
       "name": "Heap allocation (Box, 512B)",
       "category": "memory_patterns",
       "operations": 100000,
-      "allocations_per_sec": 44062568.84776383,
-      "bytes_per_sec": 22560035250.05508,
-      "latency_ns": 22.695,
+      "allocations_per_sec": 37182212.92171136,
+      "bytes_per_sec": 19037293015.916218,
+      "latency_ns": 26.89458,
       "peak_memory_mb": 48.828125
     },
     {
       "name": "Vector allocation (64 elements)",
       "category": "memory_patterns",
       "operations": 100000,
-      "allocations_per_sec": 16823687.75235532,
-      "bytes_per_sec": 8613728129.205923,
-      "latency_ns": 59.44,
+      "allocations_per_sec": 15826956.916174421,
+      "bytes_per_sec": 8103401941.081304,
+      "latency_ns": 63.18334,
       "peak_memory_mb": 48.828125
     },
     {
       "name": "Boxed allocation (8B)",
       "category": "memory_patterns",
       "operations": 1000000,
-      "allocations_per_sec": 67307963.4811221,
-      "bytes_per_sec": 538463707.8489769,
-      "latency_ns": 14.857083,
+      "allocations_per_sec": 71073417.56101902,
+      "bytes_per_sec": 568587340.4881521,
+      "latency_ns": 14.069958,
       "peak_memory_mb": 7.62939453125
     }
   ],
@@ -543,81 +543,81 @@
       "name": "Sequential access (L1 cache fit)",
       "category": "cache_efficiency",
       "operations": 1000000,
-      "ops_per_sec": 6411941600.035907,
-      "latency_ns": 0.155959,
+      "ops_per_sec": 657570277.8234423,
+      "latency_ns": 1.52075,
       "cache_line_utilization": 100.0,
       "estimated_cache_misses": 125000,
-      "bandwidth_mb_s": 48919.23217800832
+      "bandwidth_mb_s": 5016.863081538714
     },
     {
       "name": "Sequential access (L2 cache fit)",
       "category": "cache_efficiency",
       "operations": 262144,
-      "ops_per_sec": 7436709219.858155,
-      "latency_ns": 0.13446807861328125,
+      "ops_per_sec": 6601793089.553742,
+      "latency_ns": 0.1514739990234375,
       "cache_line_utilization": 100.0,
       "estimated_cache_misses": 32768,
-      "bandwidth_mb_s": 56737.58865248226
+      "bandwidth_mb_s": 50367.684093885364
     },
     {
       "name": "Sequential access (L3 cache fit)",
       "category": "cache_efficiency",
       "operations": 4194304,
-      "ops_per_sec": 1659112332.4344819,
-      "latency_ns": 0.6027319431304932,
+      "ops_per_sec": 699721232.8481462,
+      "latency_ns": 1.429140567779541,
       "cache_line_utilization": 100.0,
       "estimated_cache_misses": 524288,
-      "bandwidth_mb_s": 12658.022555805068
+      "bandwidth_mb_s": 5338.4493472911545
     },
     {
       "name": "Random access (small dataset)",
       "category": "cache_efficiency",
       "operations": 100000,
-      "ops_per_sec": 1067623257.1050328,
-      "latency_ns": 0.93666,
+      "ops_per_sec": 946745562.1301775,
+      "latency_ns": 1.05625,
       "cache_line_utilization": 12.5,
       "estimated_cache_misses": 90000,
-      "bandwidth_mb_s": 8145.31903919245
+      "bandwidth_mb_s": 7223.095414201183
     },
     {
       "name": "Random access (medium dataset)",
       "category": "cache_efficiency",
       "operations": 262144,
-      "ops_per_sec": 1019024295.4324588,
-      "latency_ns": 0.9813308715820312,
+      "ops_per_sec": 742705931.0172882,
+      "latency_ns": 1.3464279174804688,
       "cache_line_utilization": 12.5,
       "estimated_cache_misses": 249036,
-      "bandwidth_mb_s": 7774.538386783285
+      "bandwidth_mb_s": 5666.396568430238
     },
     {
       "name": "Random access (large dataset)",
       "category": "cache_efficiency",
       "operations": 1048576,
-      "ops_per_sec": 583812663.4459543,
-      "latency_ns": 1.7128782272338867,
+      "ops_per_sec": 142830192.04603145,
+      "latency_ns": 7.001320838928223,
       "cache_line_utilization": 12.5,
       "estimated_cache_misses": 1038090,
-      "bandwidth_mb_s": 4454.137141769061
+      "bandwidth_mb_s": 1089.7078860933796
     },
     {
       "name": "Strided access (stride=16)",
       "category": "cache_efficiency",
       "operations": 62500,
-      "ops_per_sec": 268672756.5824825,
-      "latency_ns": 3.722,
+      "ops_per_sec": 337001709.27266943,
+      "latency_ns": 2.967344,
       "cache_line_utilization": 6.25,
       "estimated_cache_misses": 62500,
-      "bandwidth_mb_s": 2049.8104597662546
+      "bandwidth_mb_s": 2571.1189977468066
     },
     {
       "name": "Cache thrashing (2 arrays)",
       "category": "cache_efficiency",
       "operations": 1048576,
-      "ops_per_sec": 5132731580.287041,
-      "latency_ns": 0.19482803344726562,
+      "ops_per_sec": 6866497717.881722,
+      "latency_ns": 0.14563465118408203,
       "cache_line_utilization": 50.0,
       "estimated_cache_misses": 838860,
-      "bandwidth_mb_s": 39159.63424901612
+      "bandwidth_mb_s": 52387.22013764742
     }
   ],
   "contention": [
@@ -628,8 +628,8 @@
       "operations_per_thread": 1000000,
       "total_operations": 1000000,
       "total_duration_ms": 1,
-      "ops_per_sec": 686498698.7417165,
-      "avg_latency_ns": 1.456667,
+      "ops_per_sec": 682438735.7685932,
+      "avg_latency_ns": 1.465333,
       "contention_overhead_percent": 0.0
     },
     {
@@ -638,10 +638,10 @@
       "threads": 2,
       "operations_per_thread": 100000,
       "total_operations": 200000,
-      "total_duration_ms": 1,
-      "ops_per_sec": 118273211.11768185,
-      "avg_latency_ns": 8.455,
-      "contention_overhead_percent": 0.0
+      "total_duration_ms": 6,
+      "ops_per_sec": 30455112.05806206,
+      "avg_latency_ns": 32.83521,
+      "contention_overhead_percent": 228.35209999999995
     },
     {
       "name": "Mutex contention (4 threads)",
@@ -649,10 +649,10 @@
       "threads": 4,
       "operations_per_thread": 100000,
       "total_operations": 400000,
-      "total_duration_ms": 6,
-      "ops_per_sec": 59115481.65003724,
-      "avg_latency_ns": 16.9160425,
-      "contention_overhead_percent": 69.16042499999999
+      "total_duration_ms": 14,
+      "ops_per_sec": 27037836.68105688,
+      "avg_latency_ns": 36.9852075,
+      "contention_overhead_percent": 269.852075
     },
     {
       "name": "Mutex contention (8 threads)",
@@ -661,9 +661,9 @@
       "operations_per_thread": 100000,
       "total_operations": 800000,
       "total_duration_ms": 8,
-      "ops_per_sec": 94279397.22938778,
-      "avg_latency_ns": 10.60677125,
-      "contention_overhead_percent": 6.067712499999995
+      "ops_per_sec": 91289029.62614289,
+      "avg_latency_ns": 10.95421875,
+      "contention_overhead_percent": 9.542187500000008
     },
     {
       "name": "RwLock contention (2 threads)",
@@ -671,10 +671,10 @@
       "threads": 2,
       "operations_per_thread": 100000,
       "total_operations": 200000,
-      "total_duration_ms": 1,
-      "ops_per_sec": 190325199.15153027,
-      "avg_latency_ns": 5.254165,
-      "contention_overhead_percent": 0.0
+      "total_duration_ms": 3,
+      "ops_per_sec": 62732797.4906881,
+      "avg_latency_ns": 15.940625,
+      "contention_overhead_percent": 59.40625000000001
     },
     {
       "name": "RwLock contention (4 threads)",
@@ -683,8 +683,8 @@
       "operations_per_thread": 100000,
       "total_operations": 400000,
       "total_duration_ms": 2,
-      "ops_per_sec": 161073847.12400633,
-      "avg_latency_ns": 6.2083325,
+      "ops_per_sec": 188798045.56263235,
+      "avg_latency_ns": 5.296665,
       "contention_overhead_percent": 0.0
     },
     {
@@ -693,9 +693,9 @@
       "threads": 8,
       "operations_per_thread": 100000,
       "total_operations": 800000,
-      "total_duration_ms": 7,
-      "ops_per_sec": 107648058.12995139,
-      "avg_latency_ns": 9.28953125,
+      "total_duration_ms": 5,
+      "ops_per_sec": 148936491.05999404,
+      "avg_latency_ns": 6.71427125,
       "contention_overhead_percent": 0.0
     },
     {
@@ -704,9 +704,9 @@
       "threads": 4,
       "operations_per_thread": 1000000,
       "total_operations": 4000000,
-      "total_duration_ms": 0,
-      "ops_per_sec": 7496490705.288587,
-      "avg_latency_ns": 0.13339575,
+      "total_duration_ms": 15,
+      "ops_per_sec": 257841325.35082373,
+      "avg_latency_ns": 3.87835425,
       "contention_overhead_percent": 0.0
     },
     {
@@ -715,9 +715,9 @@
       "threads": 8,
       "operations_per_thread": 1000000,
       "total_operations": 8000000,
-      "total_duration_ms": 0,
-      "ops_per_sec": 12019537758.626648,
-      "avg_latency_ns": 0.083197875,
+      "total_duration_ms": 54,
+      "ops_per_sec": 145643330.98823297,
+      "avg_latency_ns": 6.8660885,
       "contention_overhead_percent": 0.0
     }
   ]
