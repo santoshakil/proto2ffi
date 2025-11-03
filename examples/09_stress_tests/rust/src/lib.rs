@@ -357,5 +357,254 @@ mod tests {
         stress_destroy_huge_message(ptr::null_mut());
         stress_destroy_massive_array(ptr::null_mut());
         stress_destroy_recursive_node(ptr::null_mut());
+        stress_destroy_complex_graph(ptr::null_mut());
+        stress_destroy_allocation_test(ptr::null_mut());
+        stress_destroy_mixed_complexity(ptr::null_mut());
+        stress_destroy_stress_test_suite(ptr::null_mut());
+    }
+
+    #[test]
+    fn test_complex_graph_allocation() {
+        let ptr = stress_create_complex_graph();
+        assert!(!ptr.is_null());
+        stress_destroy_complex_graph(ptr);
+    }
+
+    #[test]
+    fn test_allocation_test_creation() {
+        let ptr = stress_create_allocation_test();
+        assert!(!ptr.is_null());
+        stress_destroy_allocation_test(ptr);
+    }
+
+    #[test]
+    fn test_mixed_complexity_creation() {
+        let ptr = stress_create_mixed_complexity();
+        assert!(!ptr.is_null());
+        stress_destroy_mixed_complexity(ptr);
+    }
+
+    #[test]
+    fn test_stress_test_suite_creation() {
+        let ptr = stress_create_stress_test_suite();
+        assert!(!ptr.is_null());
+        stress_destroy_stress_test_suite(ptr);
+    }
+
+
+    #[test]
+    fn test_allocate_memory_blocks() {
+        let ptr = stress_create_allocation_test();
+        assert!(!ptr.is_null());
+        let result = stress_allocate_memory_blocks(ptr, 1000);
+        assert_eq!(result, 1000);
+        stress_destroy_allocation_test(ptr);
+    }
+
+    #[test]
+    fn test_allocate_memory_blocks_null() {
+        let result = stress_allocate_memory_blocks(ptr::null_mut(), 100);
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn test_build_recursive_tree() {
+        let ptr = stress_create_recursive_node();
+        assert!(!ptr.is_null());
+        let result = stress_build_recursive_tree(ptr, 5, 3);
+        assert_eq!(result, 3);
+        stress_destroy_recursive_node(ptr);
+    }
+
+    #[test]
+    fn test_build_recursive_tree_depth_zero() {
+        let ptr = stress_create_recursive_node();
+        assert!(!ptr.is_null());
+        let result = stress_build_recursive_tree(ptr, 0, 3);
+        assert_eq!(result, 0);
+        stress_destroy_recursive_node(ptr);
+    }
+
+    #[test]
+    fn test_build_recursive_tree_null() {
+        let result = stress_build_recursive_tree(ptr::null_mut(), 5, 3);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_traverse_deep_nesting() {
+        let ptr = stress_create_deep_nesting();
+        assert!(!ptr.is_null());
+        let result = stress_traverse_deep_nesting(ptr);
+        assert_eq!(result, 20);
+        stress_destroy_deep_nesting(ptr);
+    }
+
+    #[test]
+    fn test_traverse_deep_nesting_null() {
+        let result = stress_traverse_deep_nesting(ptr::null());
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn test_measure_layout_size() {
+        let size = stress_measure_layout_size();
+        assert!(size > 0);
+    }
+
+    #[test]
+    fn test_measure_wide_message_size() {
+        let size = stress_measure_wide_message_size();
+        assert!(size > 0);
+    }
+
+    #[test]
+    fn test_measure_huge_message_size() {
+        let size = stress_measure_huge_message_size();
+        assert!(size > 0);
+    }
+
+    #[test]
+    fn test_concurrent_allocations() {
+        use std::thread;
+        use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
+
+        let allocated = Arc::new(AtomicU32::new(0));
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let allocated = Arc::clone(&allocated);
+                thread::spawn(move || {
+                    for _ in 0..100 {
+                        let ptr = stress_create_deep_nesting();
+                        if !ptr.is_null() {
+                            allocated.fetch_add(1, Ordering::Relaxed);
+                            stress_destroy_deep_nesting(ptr);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(allocated.load(Ordering::Relaxed), 800);
+    }
+
+    #[test]
+    fn test_concurrent_mixed_allocations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for _ in 0..50 {
+                        match i % 4 {
+                            0 => {
+                                let p = stress_create_deep_nesting();
+                                assert!(!p.is_null());
+                                stress_destroy_deep_nesting(p);
+                            }
+                            1 => {
+                                let p = stress_create_wide_message();
+                                assert!(!p.is_null());
+                                stress_destroy_wide_message(p);
+                            }
+                            2 => {
+                                let p = stress_create_huge_message();
+                                assert!(!p.is_null());
+                                stress_destroy_huge_message(p);
+                            }
+                            _ => {
+                                let p = stress_create_massive_array();
+                                assert!(!p.is_null());
+                                stress_destroy_massive_array(p);
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_repeated_complex_operations() {
+        for _ in 0..10 {
+            let deep = stress_create_deep_nesting();
+            let wide = stress_create_wide_message();
+            let huge = stress_create_huge_message();
+            let node = stress_create_recursive_node();
+
+            assert!(!deep.is_null());
+            assert!(!wide.is_null());
+            assert!(!huge.is_null());
+            assert!(!node.is_null());
+
+            let _ = stress_build_recursive_tree(node, 3, 2);
+            let _ = stress_traverse_deep_nesting(deep);
+
+            stress_destroy_deep_nesting(deep);
+            stress_destroy_wide_message(wide);
+            stress_destroy_huge_message(huge);
+            stress_destroy_recursive_node(node);
+        }
+    }
+
+    #[test]
+    fn test_rapid_allocation_deallocation() {
+        for _ in 0..1000 {
+            let ptr = stress_create_recursive_node();
+            stress_destroy_recursive_node(ptr);
+        }
+    }
+
+    #[test]
+    fn test_interleaved_operations() {
+        let mut deep_ptrs = Vec::new();
+        let mut wide_ptrs = Vec::new();
+
+        for _ in 0..50 {
+            deep_ptrs.push(stress_create_deep_nesting());
+        }
+
+        for i in 0..25 {
+            stress_destroy_deep_nesting(deep_ptrs[i]);
+        }
+
+        for _ in 0..25 {
+            wide_ptrs.push(stress_create_wide_message());
+        }
+
+        for i in 25..50 {
+            stress_destroy_deep_nesting(deep_ptrs[i]);
+        }
+
+        for i in 0..25 {
+            stress_destroy_wide_message(wide_ptrs[i]);
+        }
+    }
+
+    #[test]
+    fn test_recursive_tree_max_depth() {
+        let ptr = stress_create_recursive_node();
+        assert!(!ptr.is_null());
+        let result = stress_build_recursive_tree(ptr, 100, 5);
+        assert_eq!(result, 5);
+        stress_destroy_recursive_node(ptr);
+    }
+
+    #[test]
+    fn test_allocation_stress_high_count() {
+        let ptr = stress_create_allocation_test();
+        assert!(!ptr.is_null());
+        let result = stress_allocate_memory_blocks(ptr, 1000000);
+        assert_eq!(result, 1000000);
+        stress_destroy_allocation_test(ptr);
     }
 }
