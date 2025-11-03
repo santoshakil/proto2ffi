@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "task_manager"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 tokio = { version = "1.36", features = ["sync", "rt-multi-thread"] }

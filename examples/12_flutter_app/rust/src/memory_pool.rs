@@ -65,9 +65,8 @@ impl MemoryPool {
     }
 
     pub fn compact(&mut self) {
-        self.blocks.retain(|block| block.used > 0);
-
         let min_blocks = 10;
+
         while self.blocks.len() > min_blocks {
             if let Some(block) = self.blocks.back() {
                 if block.used == 0 {

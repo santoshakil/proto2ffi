@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "video_streaming_ffi"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 once_cell = "1.19"

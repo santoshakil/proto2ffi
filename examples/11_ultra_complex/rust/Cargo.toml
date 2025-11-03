@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "ultra_complex_ffi"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 
