@@ -15,6 +15,7 @@ pub fn generate_simd_operations(message: &MessageLayout) -> Option<TokenStream> 
     let average_operations = generate_average_operations(message, &name);
     let count_operations = generate_count_operations(message, &name);
     let dot_product_operations = generate_dot_product_operations(message, &name);
+    let reduce_operations = generate_reduce_operations(message, &name);
 
     Some(quote! {
         #[cfg(target_arch = "x86_64")]
@@ -28,6 +29,7 @@ pub fn generate_simd_operations(message: &MessageLayout) -> Option<TokenStream> 
             #average_operations
             #count_operations
             #dot_product_operations
+            #reduce_operations
         }
     })
 }
@@ -384,6 +386,127 @@ fn generate_dot_product_operations(message: &MessageLayout, name: &proc_macro2::
                     sum
                 }
             });
+        }
+    }
+
+    quote! {
+        #(#ops)*
+    }
+}
+fn generate_reduce_operations(message: &MessageLayout, name: &proc_macro2::Ident) -> TokenStream {
+    let mut ops = Vec::new();
+
+    for field in &message.fields {
+        if is_summable_type(field) && field.repeated && field.max_count.is_some() {
+            let field_name = format_ident!("{}", field.name);
+            let reduce_sum_fn = format_ident!("reduce_sum_{}", field.name);
+            let reduce_max_fn = format_ident!("reduce_max_{}", field.name);
+            let reduce_min_fn = format_ident!("reduce_min_{}", field.name);
+
+            if field.size == 4 {
+                ops.push(quote! {
+                    #[target_feature(enable = "avx2")]
+                    pub unsafe fn #reduce_sum_fn(item: &#name) -> i64 {
+                        let mut total = _mm256_setzero_si256();
+                        let count = item.#field_name().len();
+
+                        for chunk in item.#field_name().chunks_exact(8) {
+                            let values = _mm256_set_epi32(
+                                chunk[7] as i32,
+                                chunk[6] as i32,
+                                chunk[5] as i32,
+                                chunk[4] as i32,
+                                chunk[3] as i32,
+                                chunk[2] as i32,
+                                chunk[1] as i32,
+                                chunk[0] as i32,
+                            );
+                            total = _mm256_add_epi32(total, values);
+                        }
+
+                        let mut sum = 0i64;
+                        let result: [i32; 8] = std::mem::transmute(total);
+                        for val in &result {
+                            sum += *val as i64;
+                        }
+
+                        let remainder = &item.#field_name()[count & !7..];
+                        for val in remainder {
+                            sum += *val as i64;
+                        }
+
+                        sum
+                    }
+
+                    #[target_feature(enable = "avx2")]
+                    pub unsafe fn #reduce_max_fn(item: &#name) -> i32 {
+                        let slice = item.#field_name();
+                        if slice.is_empty() {
+                            return i32::MIN;
+                        }
+
+                        let mut max_vec = _mm256_set1_epi32(i32::MIN);
+
+                        for chunk in slice.chunks_exact(8) {
+                            let values = _mm256_set_epi32(
+                                chunk[7] as i32,
+                                chunk[6] as i32,
+                                chunk[5] as i32,
+                                chunk[4] as i32,
+                                chunk[3] as i32,
+                                chunk[2] as i32,
+                                chunk[1] as i32,
+                                chunk[0] as i32,
+                            );
+                            max_vec = _mm256_max_epi32(max_vec, values);
+                        }
+
+                        let max_array: [i32; 8] = std::mem::transmute(max_vec);
+                        let mut max_val = *max_array.iter().max().unwrap();
+
+                        let remainder = &slice[slice.len() & !7..];
+                        for val in remainder {
+                            max_val = max_val.max(*val as i32);
+                        }
+
+                        max_val
+                    }
+
+                    #[target_feature(enable = "avx2")]
+                    pub unsafe fn #reduce_min_fn(item: &#name) -> i32 {
+                        let slice = item.#field_name();
+                        if slice.is_empty() {
+                            return i32::MAX;
+                        }
+
+                        let mut min_vec = _mm256_set1_epi32(i32::MAX);
+
+                        for chunk in slice.chunks_exact(8) {
+                            let values = _mm256_set_epi32(
+                                chunk[7] as i32,
+                                chunk[6] as i32,
+                                chunk[5] as i32,
+                                chunk[4] as i32,
+                                chunk[3] as i32,
+                                chunk[2] as i32,
+                                chunk[1] as i32,
+                                chunk[0] as i32,
+                            );
+                            min_vec = _mm256_min_epi32(min_vec, values);
+                        }
+
+                        let min_array: [i32; 8] = std::mem::transmute(min_vec);
+                        let mut min_val = *min_array.iter().min().unwrap();
+
+                        let remainder = &slice[slice.len() & !7..];
+                        for val in remainder {
+                            min_val = min_val.min(*val as i32);
+                        }
+
+                        min_val
+                    }
+                });
+            }
         }
     }
 
