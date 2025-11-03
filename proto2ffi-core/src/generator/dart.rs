@@ -90,14 +90,14 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
                     .trim_start_matches('[')
                     .split(';')
                     .next()
-                    .unwrap()
+                    .unwrap_or(&field.rust_type)
                     .trim();
 
                 let dart_type = if inner_type.starts_with('[') {
                     let base_type = inner_type.trim_start_matches('[')
                         .split(';')
                         .next()
-                        .unwrap()
+                        .unwrap_or(inner_type)
                         .trim();
                     rust_to_dart_struct_type(base_type)
                 } else {
@@ -117,9 +117,11 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
         if field.dart_type == "String" {
             code.push_str(&generate_string_getter(&field.name, field.size));
             code.push_str(&generate_string_setter(&field.name, field.size));
-        } else if field.repeated && field.max_count.is_some() {
-            code.push_str(&generate_array_getter(&field.name, &field.dart_type));
-            code.push_str(&generate_array_adder(&field.name, &field.dart_type, field.max_count.unwrap()));
+        } else if field.repeated {
+            if let Some(max_count) = field.max_count {
+                code.push_str(&generate_array_getter(&field.name, &field.dart_type));
+                code.push_str(&generate_array_adder(&field.name, &field.dart_type, max_count));
+            }
         }
     }
 
@@ -154,22 +156,48 @@ fn generate_string_getter(field_name: &str, max_len: usize) -> String {
 fn generate_string_setter(field_name: &str, max_len: usize) -> String {
     format!(
         r#"  set {}_str(String value) {{
-    final bytes = utf8.encode(value);
-    final len = bytes.length < {} ? bytes.length : {};
-    for (int i = 0; i < len; i++) {{
+    var bytes = utf8.encode(value);
+    final maxBytes = {} - 1;
+
+    if (bytes.length > maxBytes) {{
+      var truncated = maxBytes;
+      while (truncated > 0 && (bytes[truncated] & 0xC0) == 0x80) {{
+        truncated--;
+      }}
+
+      if (truncated > 0 && (bytes[truncated] & 0x80) != 0) {{
+        final firstByte = bytes[truncated];
+        int charLen;
+        if ((firstByte & 0xE0) == 0xC0) {{
+          charLen = 2;
+        }} else if ((firstByte & 0xF0) == 0xE0) {{
+          charLen = 3;
+        }} else if ((firstByte & 0xF8) == 0xF0) {{
+          charLen = 4;
+        }} else {{
+          charLen = 1;
+        }}
+
+        if (truncated + charLen > maxBytes) {{
+          truncated--;
+          while (truncated > 0 && (bytes[truncated] & 0xC0) == 0x80) {{
+            truncated--;
+          }}
+        }}
+      }}
+      bytes = bytes.sublist(0, truncated);
+    }}
+
+    for (var i = 0; i < bytes.length; i++) {{
       {}[i] = bytes[i];
     }}
-    if (len < {}) {{
-      {}[len] = 0;
-    }}
+    {}[bytes.length] = 0;
   }}
 
 "#,
         field_name,
-        max_len - 1,
-        max_len - 1,
-        field_name,
         max_len,
+        field_name,
         field_name
     )
 }

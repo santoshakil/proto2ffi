@@ -1,9 +1,7 @@
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
-use std::marker::PhantomData;
 use std::mem;
-use std::slice;
 #[repr(C, align(8))]
 #[derive(Copy, Clone, Debug)]
 pub struct I32ArrayOps {

@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use colored::*;
+use colored::Colorize;
 use proto2ffi_core::{calculate_layout, generate_all, parse_proto_file};
 use std::path::PathBuf;
 

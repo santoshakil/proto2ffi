@@ -43,32 +43,57 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
             }
 
             pub fn allocate(&self) -> *mut #name {
-                let mut inner = self.inner.lock().unwrap();
+                let mut inner = match self.inner.lock() {
+                    Ok(guard) => guard,
+                    Err(_) => return std::ptr::null_mut(),
+                };
+
                 if inner.free_list.is_empty() {
                     inner.add_chunk();
                 }
 
-                let ptr = inner.free_list.pop()
-                    .expect("free_list should not be empty after add_chunk");
-                inner.allocated += 1;
-                ptr
+                match inner.free_list.pop() {
+                    Some(ptr) => {
+                        inner.allocated += 1;
+                        ptr
+                    }
+                    None => std::ptr::null_mut(),
+                }
             }
 
-            pub fn free(&self, ptr: *mut #name) {
-                let mut inner = self.inner.lock().unwrap();
+            pub fn free(&self, ptr: *mut #name) -> bool {
+                if ptr.is_null() {
+                    return false;
+                }
+
+                let mut inner = match self.inner.lock() {
+                    Ok(guard) => guard,
+                    Err(_) => return false,
+                };
+
+                if inner.free_list.contains(&ptr) {
+                    eprintln!("Warning: Double free detected for pointer {:?}", ptr);
+                    return false;
+                }
+
                 inner.free_list.push(ptr);
                 inner.allocated -= 1;
+                true
             }
 
             pub fn allocated_count(&self) -> usize {
-                let inner = self.inner.lock().unwrap();
-                inner.allocated
+                match self.inner.lock() {
+                    Ok(inner) => inner.allocated,
+                    Err(_) => 0,
+                }
             }
 
             pub fn capacity(&self) -> usize {
                 const CHUNK_SIZE: usize = 100;
-                let inner = self.inner.lock().unwrap();
-                inner.chunks.len() * CHUNK_SIZE
+                match self.inner.lock() {
+                    Ok(inner) => inner.chunks.len() * CHUNK_SIZE,
+                    Err(_) => 0,
+                }
             }
         }
 

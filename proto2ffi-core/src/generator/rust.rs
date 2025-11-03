@@ -117,51 +117,52 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
     let mut methods = Vec::new();
 
     for field in &message.fields {
-        if field.repeated && field.max_count.is_some() {
-            let field_name = escape_rust_keyword(&field.name);
-            let count_field = format_ident!("{}_count", field.name);
-            let max_count = proc_macro2::Literal::usize_unsuffixed(field.max_count.unwrap());
+        if field.repeated {
+            if let Some(max_count_val) = field.max_count {
+                let field_name = escape_rust_keyword(&field.name);
+                let count_field = format_ident!("{}_count", field.name);
+                let max_count = proc_macro2::Literal::usize_unsuffixed(max_count_val);
 
-            let element_type = if field.rust_type.starts_with('[') {
-                field.rust_type
-                    .trim_start_matches('[')
-                    .split(';')
-                    .next()
-                    .unwrap()
-                    .trim()
-                    .to_string()
-            } else {
-                field.rust_type.clone()
-            };
-            let elem_type = parse_rust_type(&element_type);
+                let element_type = if field.rust_type.starts_with('[') {
+                    field.rust_type
+                        .trim_start_matches('[')
+                        .split(';')
+                        .next()
+                        .map(|s| s.trim().to_string())
+                        .unwrap_or_else(|| field.rust_type.clone())
+                } else {
+                    field.rust_type.clone()
+                };
+                let elem_type = parse_rust_type(&element_type);
 
-            methods.push(quote! {
-                #[inline(always)]
-                pub fn #field_name(&self) -> &[#elem_type] {
-                    &self.#field_name[..self.#count_field as usize]
-                }
-            });
-
-            let getter_mut = format_ident!("{}_mut", field.name);
-            methods.push(quote! {
-                #[inline(always)]
-                pub fn #getter_mut(&mut self) -> &mut [#elem_type] {
-                    let count = self.#count_field as usize;
-                    &mut self.#field_name[..count]
-                }
-            });
-
-            let add_method = format_ident!("add_{}", field.name.trim_end_matches('s'));
-            methods.push(quote! {
-                pub fn #add_method(&mut self, item: #elem_type) -> Result<(), &'static str> {
-                    if self.#count_field >= #max_count as u32 {
-                        return Err("Array full");
+                methods.push(quote! {
+                    #[inline(always)]
+                    pub fn #field_name(&self) -> &[#elem_type] {
+                        &self.#field_name[..self.#count_field as usize]
                     }
-                    self.#field_name[self.#count_field as usize] = item;
-                    self.#count_field += 1;
-                    Ok(())
-                }
-            });
+                });
+
+                let getter_mut = format_ident!("{}_mut", field.name);
+                methods.push(quote! {
+                    #[inline(always)]
+                    pub fn #getter_mut(&mut self) -> &mut [#elem_type] {
+                        let count = self.#count_field as usize;
+                        &mut self.#field_name[..count]
+                    }
+                });
+
+                let add_method = format_ident!("add_{}", field.name.trim_end_matches('s'));
+                methods.push(quote! {
+                    pub fn #add_method(&mut self, item: #elem_type) -> Result<(), &'static str> {
+                        if self.#count_field >= #max_count as u32 {
+                            return Err("Array full");
+                        }
+                        self.#field_name[self.#count_field as usize] = item;
+                        self.#count_field += 1;
+                        Ok(())
+                    }
+                });
+            }
         }
     }
 
@@ -172,15 +173,23 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
             #[inline(always)]
             pub unsafe fn from_ptr(ptr: *const u8) -> &'static Self {
-                debug_assert!(!ptr.is_null(), "Null pointer passed to from_ptr");
-                debug_assert!(ptr as usize % Self::ALIGNMENT == 0, "Misaligned pointer passed to from_ptr");
+                assert!(!ptr.is_null(), "Null pointer passed to from_ptr");
+                assert!(
+                    ptr as usize % Self::ALIGNMENT == 0,
+                    "Misaligned pointer passed to from_ptr: {:p} (alignment: {})",
+                    ptr, Self::ALIGNMENT
+                );
                 &*(ptr as *const Self)
             }
 
             #[inline(always)]
             pub unsafe fn from_ptr_mut(ptr: *mut u8) -> &'static mut Self {
-                debug_assert!(!ptr.is_null(), "Null pointer passed to from_ptr_mut");
-                debug_assert!(ptr as usize % Self::ALIGNMENT == 0, "Misaligned pointer passed to from_ptr_mut");
+                assert!(!ptr.is_null(), "Null pointer passed to from_ptr_mut");
+                assert!(
+                    ptr as usize % Self::ALIGNMENT == 0,
+                    "Misaligned pointer passed to from_ptr_mut: {:p} (alignment: {})",
+                    ptr, Self::ALIGNMENT
+                );
                 &mut *(ptr as *mut Self)
             }
 
@@ -215,9 +224,11 @@ fn generate_message_ffi(message: &MessageLayout) -> Result<TokenStream> {
 
 fn parse_rust_type(type_str: &str) -> TokenStream {
     if type_str.starts_with('[') || type_str.starts_with('*') {
-        type_str.parse().unwrap_or_else(|_| {
-            let ident = format_ident!("PARSE_ERROR");
-            quote! { #ident }
+        type_str.parse().unwrap_or_else(|e| {
+            panic!(
+                "Failed to parse Rust type '{}': {}. This is a bug in the code generator.",
+                type_str, e
+            )
         })
     } else {
         let ident = format_ident!("{}", type_str);

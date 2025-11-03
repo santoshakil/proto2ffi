@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::types::*;
+use crate::error::{Result, Proto2FFIError};
+use crate::types::{ProtoFile, Message, FieldType};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -227,7 +227,10 @@ fn get_type_info(
                     .nth(1)
                     .unwrap_or("1")
                     .trim();
-                let inner_count: usize = inner_count_str.parse().unwrap_or(1);
+                let inner_count: usize = inner_count_str.parse()
+                    .map_err(|_| Proto2FFIError::ParseError(
+                        format!("Invalid array size annotation: '{}' is not a valid number", inner_count_str)
+                    ))?;
                 (rust_to_dart_ffi_type(inner_element), count * inner_count)
             } else {
                 (rust_to_dart_ffi_type(base_rust.trim_start_matches("external ")), count)

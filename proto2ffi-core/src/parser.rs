@@ -3,7 +3,7 @@ use pest_derive::Parser;
 use std::path::Path;
 use std::fs;
 use crate::error::{Proto2FFIError, Result};
-use crate::types::*;
+use crate::types::{ProtoFile, Message, Field, FieldType, FieldOption, MessageOption, Enum, EnumVariant};
 
 #[derive(Parser)]
 #[grammar = "proto.pest"]

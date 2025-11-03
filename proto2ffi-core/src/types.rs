@@ -78,21 +78,6 @@ impl FieldType {
         1024
     }
 
-    #[allow(dead_code)]
-    pub fn size(&self) -> usize {
-        match self {
-            FieldType::Int32 | FieldType::Uint32 | FieldType::Sint32 | FieldType::Fixed32 | FieldType::Sfixed32 => 4,
-            FieldType::Int64 | FieldType::Uint64 | FieldType::Sint64 | FieldType::Fixed64 | FieldType::Sfixed64 => 8,
-            FieldType::Float => 4,
-            FieldType::Double => 8,
-            FieldType::Bool => 1,
-            FieldType::String { max_length } => *max_length,
-            FieldType::Bytes { max_length } => *max_length,
-            FieldType::Message(_) => 8,
-            FieldType::Enum(_) => 4,
-        }
-    }
-
     pub fn alignment(&self) -> usize {
         match self {
             FieldType::Int32 | FieldType::Uint32 | FieldType::Sint32 | FieldType::Fixed32 | FieldType::Sfixed32 => 4,

@@ -3,8 +3,6 @@ name = "ultra_complex_ffi"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-
 [lib]
 name = "ultra_complex_ffi"
 crate-type = ["cdylib", "staticlib"]

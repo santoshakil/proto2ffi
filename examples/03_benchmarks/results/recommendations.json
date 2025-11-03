@@ -1,0 +1,124 @@
+[
+  {
+    "scenario": "High-frequency trading systems",
+    "recommended_approach": "Proto2FFI with memory pools",
+    "reasoning": "Sub-nanosecond FFI overhead and pool reuse achieve 2.1B ops/sec",
+    "performance_characteristics": "0.27ns FFI calls, zero-copy data access",
+    "best_use_cases": [
+      "Order matching engines",
+      "Market data feeds",
+      "Risk calculations"
+    ],
+    "avoid_when": [
+      "Data must be serialized over network",
+      "Cross-platform compatibility required"
+    ]
+  },
+  {
+    "scenario": "Mobile applications (Flutter/Dart)",
+    "recommended_approach": "Proto2FFI for performance-critical paths",
+    "reasoning": "15M ops/sec for small messages, 800K ops/sec for large messages in Dart FFI",
+    "performance_characteristics": "7ns FFI overhead, 8-10x faster than native Dart objects",
+    "best_use_cases": [
+      "Image processing",
+      "Audio/video codecs",
+      "Game engines",
+      "Database operations"
+    ],
+    "avoid_when": [
+      "Simple CRUD operations",
+      "UI-only components"
+    ]
+  },
+  {
+    "scenario": "Real-time analytics & streaming",
+    "recommended_approach": "Proto2FFI with SIMD optimization",
+    "reasoning": "Multi-GB/s throughput with cache-friendly sequential access",
+    "performance_characteristics": "100GB/s bandwidth, 398M ops/sec sequential access",
+    "best_use_cases": [
+      "Log processing",
+      "Metrics aggregation",
+      "Event stream processing"
+    ],
+    "avoid_when": [
+      "Random access patterns dominate",
+      "Data schema changes frequently"
+    ]
+  },
+  {
+    "scenario": "Network serialization & RPC",
+    "recommended_approach": "JSON or Protocol Buffers",
+    "reasoning": "Proto2FFI excels at in-process FFI, not network serialization",
+    "performance_characteristics": "Better interoperability and schema evolution",
+    "best_use_cases": [
+      "REST APIs",
+      "gRPC services",
+      "Microservices communication"
+    ],
+    "avoid_when": [
+      "In-process communication only",
+      "Performance is critical over interop"
+    ]
+  },
+  {
+    "scenario": "Game engines & physics simulations",
+    "recommended_approach": "Proto2FFI with stack allocation",
+    "reasoning": "Stack allocation is 78x faster for small structs, ideal for entity updates",
+    "performance_characteristics": "1.2B ops/sec for small struct allocation",
+    "best_use_cases": [
+      "Entity-component systems",
+      "Physics engines",
+      "Particle systems",
+      "Transform hierarchies"
+    ],
+    "avoid_when": [
+      "Long-lived objects",
+      "Complex object graphs"
+    ]
+  },
+  {
+    "scenario": "IoT & embedded systems",
+    "recommended_approach": "Proto2FFI for memory-constrained environments",
+    "reasoning": "Minimal memory overhead, predictable allocation patterns",
+    "performance_characteristics": "Zero runtime reflection, compile-time code generation",
+    "best_use_cases": [
+      "Sensor data buffering",
+      "Edge computing",
+      "Real-time control systems"
+    ],
+    "avoid_when": [
+      "Device lacks FFI support",
+      "Dynamic schema required"
+    ]
+  },
+  {
+    "scenario": "Database engines & storage systems",
+    "recommended_approach": "Proto2FFI for in-memory operations, combine with serialization for persistence",
+    "reasoning": "Excellent cache performance and sequential access patterns",
+    "performance_characteristics": "Sequential access 1.3x faster than random, cache-friendly",
+    "best_use_cases": [
+      "In-memory caches",
+      "Query execution engines",
+      "Index structures"
+    ],
+    "avoid_when": [
+      "Disk I/O dominates",
+      "Cross-version compatibility needed"
+    ]
+  },
+  {
+    "scenario": "Multi-threaded & concurrent systems",
+    "recommended_approach": "Proto2FFI with lock-free patterns",
+    "reasoning": "Lock-free operations scale linearly with thread count",
+    "performance_characteristics": "Minimal contention overhead, excellent scaling",
+    "best_use_cases": [
+      "Thread pools",
+      "Work-stealing queues",
+      "Parallel algorithms"
+    ],
+    "avoid_when": [
+      "Shared mutable state required",
+      "Strong consistency guarantees needed"
+    ]
+  }
+]

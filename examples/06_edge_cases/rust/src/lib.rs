@@ -1,6 +1,7 @@
 mod generated;
 use generated::*;
 
+#[allow(dead_code)]
 fn string_to_bytes(s: &str, buf: &mut [u8; 256]) {
     let bytes = s.as_bytes();
     let len = bytes.len().min(256);
@@ -10,6 +11,7 @@ fn string_to_bytes(s: &str, buf: &mut [u8; 256]) {
     }
 }
 
+#[allow(dead_code)]
 fn bytes_to_string(buf: &[u8; 256]) -> String {
     let end = buf.iter().position(|&b| b == 0).unwrap_or(256);
     String::from_utf8_lossy(&buf[..end]).to_string()
@@ -310,7 +312,11 @@ pub extern "C" fn create_deeply_nested(
 }
 
 #[no_mangle]
-pub extern "C" fn create_many_fields(fields: [i32; 55]) -> *mut ManyFields {
+pub extern "C" fn create_many_fields(fields: *const i32) -> *mut ManyFields {
+    if fields.is_null() {
+        return std::ptr::null_mut();
+    }
+    let fields = unsafe { std::slice::from_raw_parts(fields, 55) };
     let msg = ManyFields {
         f1: fields[0], f2: fields[1], f3: fields[2], f4: fields[3], f5: fields[4],
         f6: fields[5], f7: fields[6], f8: fields[7], f9: fields[8], f10: fields[9],

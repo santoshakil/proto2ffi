@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Proto2FFI Performance Comparison Summary</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        h1 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 40px; border-bottom: 2px solid #ddd; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #4CAF50; color: white; }
+        tr:hover { background-color: #f5f5f5; }
+        .winner { color: #4CAF50; font-weight: bold; }
+        .metric { display: inline-block; margin: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px; min-width: 200px; }
+        .metric-value { font-size: 32px; font-weight: bold; color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Proto2FFI Performance Comparison Summary</h1>
+
+        <h2>Baseline Performance (Proto2FFI)</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Category</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Throughput (MB/s)</th></tr>
+            <tr><td>Post creation (large messages)</td><td>allocation</td><td>1768938</td><td>565.31</td><td>9420.16</td></tr><tr><td>Comment creation (medium messages)</td><td>allocation</td><td>1976118</td><td>506.04</td><td>3874.68</td></tr><tr><td>Reaction batch processing (small messages)</td><td>allocation</td><td>132649446</td><td>7.54</td><td>5060.17</td></tr><tr><td>NewsFeedItem SIMD scoring</td><td>simd</td><td>74759368</td><td>13.38</td><td>3992.58</td></tr><tr><td>Message batch operations</td><td>allocation</td><td>1583048</td><td>631.69</td><td>6099.24</td></tr><tr><td>Stack allocation - small struct</td><td>memory</td><td>1089146654</td><td>0.92</td><td>41547.65</td></tr><tr><td>Stack allocation - medium struct</td><td>memory</td><td>135910338</td><td>7.36</td><td>85026.91</td></tr><tr><td>Stack allocation - large struct</td><td>memory</td><td>16089351</td><td>62.15</td><td>85680.90</td></tr><tr><td>Heap allocation - small</td><td>memory</td><td>14503894</td><td>68.95</td><td>553.28</td></tr><tr><td>Heap allocation - large</td><td>memory</td><td>1309938</td><td>763.39</td><td>6975.83</td></tr>
+        </table>
+
+        <h2>Comparison Benchmarks</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Category</th><th>Ops/Sec</th><th>Latency (ns)</th></tr>
+            <tr><td>Native Dart allocation</td><td>comparison_dart</td><td>31221949</td><td>32.03</td></tr><tr><td>Native Dart serialization</td><td>comparison_dart</td><td>8485960</td><td>117.84</td></tr><tr><td>Native Dart access</td><td>comparison_dart</td><td>294586386</td><td>3.39</td></tr><tr><td>JSON serialization</td><td>comparison_json</td><td>6744034</td><td>148.28</td></tr><tr><td>JSON deserialization</td><td>comparison_json</td><td>7811481</td><td>128.02</td></tr><tr><td>JSON roundtrip</td><td>comparison_json</td><td>4218149</td><td>237.07</td></tr><tr><td>Bincode serialization</td><td>comparison_bincode</td><td>35828386</td><td>27.91</td></tr><tr><td>Bincode deserialization</td><td>comparison_bincode</td><td>41385024</td><td>24.16</td></tr><tr><td>Bincode roundtrip</td><td>comparison_bincode</td><td>24567007</td><td>40.70</td></tr>
+        </table>
+
+        <h2>Latency Distribution (p50/p95/p99)</h2>
+        <table>
+            <tr><th>Benchmark</th><th>p50</th><th>p95</th><th>p99</th><th>p99.9</th><th>StdDev</th></tr>
+            <tr><td>FFI call latency</td><td>0.00</td><td>42.00</td><td>42.00</td><td>84.00</td><td>64.04</td></tr><tr><td>Small allocation latency</td><td>42.00</td><td>42.00</td><td>42.00</td><td>125.00</td><td>45.29</td></tr><tr><td>Medium allocation latency</td><td>42.00</td><td>83.00</td><td>84.00</td><td>250.00</td><td>71.36</td></tr><tr><td>Large allocation latency</td><td>166.00</td><td>167.00</td><td>375.00</td><td>500.00</td><td>291.66</td></tr>
+        </table>
+
+        <h2>Cache Efficiency</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Bandwidth (MB/s)</th><th>Cache Util %</th></tr>
+            <tr><td>Sequential access (L1 cache fit)</td><td>6411941600</td><td>0.16</td><td>48919.23</td><td>100.00</td></tr><tr><td>Sequential access (L2 cache fit)</td><td>7436709220</td><td>0.13</td><td>56737.59</td><td>100.00</td></tr><tr><td>Sequential access (L3 cache fit)</td><td>1659112332</td><td>0.60</td><td>12658.02</td><td>100.00</td></tr><tr><td>Random access (small dataset)</td><td>1067623257</td><td>0.94</td><td>8145.32</td><td>12.50</td></tr><tr><td>Random access (medium dataset)</td><td>1019024295</td><td>0.98</td><td>7774.54</td><td>12.50</td></tr><tr><td>Random access (large dataset)</td><td>583812663</td><td>1.71</td><td>4454.14</td><td>12.50</td></tr><tr><td>Strided access (stride=16)</td><td>268672757</td><td>3.72</td><td>2049.81</td><td>6.25</td></tr><tr><td>Cache thrashing (2 arrays)</td><td>5132731580</td><td>0.19</td><td>39159.63</td><td>50.00</td></tr>
+        </table>
+
+        <h2>Contention & Scalability</h2>
+        <table>
+            <tr><th>Benchmark</th><th>Threads</th><th>Ops/Sec</th><th>Latency (ns)</th><th>Overhead %</th></tr>
+            <tr><td>Single-threaded baseline</td><td>1</td><td>686498699</td><td>1.46</td><td>0.00</td></tr><tr><td>Mutex contention (2 threads)</td><td>2</td><td>118273211</td><td>8.46</td><td>0.00</td></tr><tr><td>Mutex contention (4 threads)</td><td>4</td><td>59115482</td><td>16.92</td><td>69.16</td></tr><tr><td>Mutex contention (8 threads)</td><td>8</td><td>94279397</td><td>10.61</td><td>6.07</td></tr><tr><td>RwLock contention (2 threads)</td><td>2</td><td>190325199</td><td>5.25</td><td>0.00</td></tr><tr><td>RwLock contention (4 threads)</td><td>4</td><td>161073847</td><td>6.21</td><td>0.00</td></tr><tr><td>RwLock contention (8 threads)</td><td>8</td><td>107648058</td><td>9.29</td><td>0.00</td></tr><tr><td>Lock-free (4 threads)</td><td>4</td><td>7496490705</td><td>0.13</td><td>0.00</td></tr><tr><td>Lock-free (8 threads)</td><td>8</td><td>12019537759</td><td>0.08</td><td>0.00</td></tr>
+        </table>
+    </div>
+</body>
+</html>
