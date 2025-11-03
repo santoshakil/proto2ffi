@@ -33,6 +33,7 @@ pub mod benchmark;
 pub mod utils;
 pub mod stats;
 pub mod cache;
+pub mod parallel;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -42,6 +43,7 @@ pub use validator::{validate_proto_file, ValidationReport};
 pub use benchmark::{Benchmark, BenchmarkResult};
 pub use stats::{ProtoStats, LayoutStats, MessageAnalysis, analyze_message};
 pub use cache::{Cache, LruCache, CacheStats};
+pub use parallel::{parallel_map, parallel_for_each, parallel_reduce, parallel_filter, parallel_work, WorkQueue};
 
 use std::path::Path;
 
