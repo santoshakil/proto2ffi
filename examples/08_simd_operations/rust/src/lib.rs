@@ -1121,3 +1121,81 @@ mod tests {
         assert!(!has_inf);
     }
 }
+
+pub fn dot_product_f32(a: &[f32], b: &[f32]) -> f32 {
+    assert_eq!(a.len(), b.len());
+    a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
+}
+
+pub fn dot_product_f64(a: &[f64], b: &[f64]) -> f64 {
+    assert_eq!(a.len(), b.len());
+    a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
+}
+
+pub fn vector_add_f32(a: &[f32], b: &[f32], result: &mut [f32]) {
+    assert_eq!(a.len(), b.len());
+    assert_eq!(a.len(), result.len());
+    for i in 0..a.len() {
+        result[i] = a[i] + b[i];
+    }
+}
+
+pub fn vector_scale_f32(vec: &[f32], scalar: f32, result: &mut [f32]) {
+    assert_eq!(vec.len(), result.len());
+    for i in 0..vec.len() {
+        result[i] = vec[i] * scalar;
+    }
+}
+
+#[cfg(test)]
+mod advanced_tests {
+    use super::*;
+
+    #[test]
+    fn test_dot_product_f32() {
+        let a = vec![1.0, 2.0, 3.0, 4.0];
+        let b = vec![5.0, 6.0, 7.0, 8.0];
+        let result = dot_product_f32(&a, &b);
+        assert_eq!(result, 70.0);
+    }
+
+    #[test]
+    fn test_dot_product_f64() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0, 6.0];
+        let result = dot_product_f64(&a, &b);
+        assert_eq!(result, 32.0);
+    }
+
+    #[test]
+    fn test_vector_add_f32() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0, 6.0];
+        let mut result = vec![0.0; 3];
+        vector_add_f32(&a, &b, &mut result);
+        assert_eq!(result, vec![5.0, 7.0, 9.0]);
+    }
+
+    #[test]
+    fn test_vector_scale_f32() {
+        let vec = vec![1.0, 2.0, 3.0, 4.0];
+        let mut result = vec![0.0; 4];
+        vector_scale_f32(&vec, 2.5, &mut result);
+        assert_eq!(result, vec![2.5, 5.0, 7.5, 10.0]);
+    }
+
+    #[test]
+    fn test_dot_product_zero() {
+        let a = vec![0.0; 100];
+        let b = vec![1.0; 100];
+        assert_eq!(dot_product_f32(&a, &b), 0.0);
+    }
+
+    #[test]
+    fn test_vector_scale_zero() {
+        let vec = vec![1.0, 2.0, 3.0];
+        let mut result = vec![0.0; 3];
+        vector_scale_f32(&vec, 0.0, &mut result);
+        assert_eq!(result, vec![0.0, 0.0, 0.0]);
+    }
+}
