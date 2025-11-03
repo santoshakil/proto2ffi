@@ -14,13 +14,14 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
 
     quote! {
         pub struct #pool_name {
-            inner: std::sync::Mutex<#pool_inner_name>,
+            inner: std::sync::RwLock<#pool_inner_name>,
+            allocated: std::sync::atomic::AtomicUsize,
         }
 
         struct #pool_inner_name {
             chunks: Vec<Box<[#name; 100]>>,
             free_list: Vec<*mut #name>,
-            allocated: usize,
+            freed_set: std::collections::HashSet<*mut #name>,
         }
 
         impl #pool_name {
@@ -30,7 +31,7 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
                 let mut inner = #pool_inner_name {
                     chunks: Vec::with_capacity(chunk_count),
                     free_list: Vec::with_capacity(capacity),
-                    allocated: 0,
+                    freed_set: std::collections::HashSet::with_capacity(capacity),
                 };
 
                 for _ in 0..chunk_count {
@@ -38,12 +39,13 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
                 }
 
                 #pool_name {
-                    inner: std::sync::Mutex::new(inner),
+                    inner: std::sync::RwLock::new(inner),
+                    allocated: std::sync::atomic::AtomicUsize::new(0),
                 }
             }
 
             pub fn allocate(&self) -> *mut #name {
-                let mut inner = match self.inner.lock() {
+                let mut inner = match self.inner.write() {
                     Ok(guard) => guard,
                     Err(_) => return std::ptr::null_mut(),
                 };
@@ -54,7 +56,8 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
 
                 match inner.free_list.pop() {
                     Some(ptr) => {
-                        inner.allocated += 1;
+                        inner.freed_set.remove(&ptr);
+                        self.allocated.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         ptr
                     }
                     None => std::ptr::null_mut(),
@@ -66,31 +69,29 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
                     return false;
                 }
 
-                let mut inner = match self.inner.lock() {
+                let mut inner = match self.inner.write() {
                     Ok(guard) => guard,
                     Err(_) => return false,
                 };
 
-                if inner.free_list.contains(&ptr) {
+                if inner.freed_set.contains(&ptr) {
                     eprintln!("Warning: Double free detected for pointer {:?}", ptr);
                     return false;
                 }
 
                 inner.free_list.push(ptr);
-                inner.allocated -= 1;
+                inner.freed_set.insert(ptr);
+                self.allocated.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                 true
             }
 
             pub fn allocated_count(&self) -> usize {
-                match self.inner.lock() {
-                    Ok(inner) => inner.allocated,
-                    Err(_) => 0,
-                }
+                self.allocated.load(std::sync::atomic::Ordering::Relaxed)
             }
 
             pub fn capacity(&self) -> usize {
                 const CHUNK_SIZE: usize = 100;
-                match self.inner.lock() {
+                match self.inner.read() {
                     Ok(inner) => inner.chunks.len() * CHUNK_SIZE,
                     Err(_) => 0,
                 }
@@ -105,7 +106,9 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
 
                 for i in 0..CHUNK_SIZE {
                     unsafe {
-                        self.free_list.push(ptr.add(i));
+                        let item_ptr = ptr.add(i);
+                        self.free_list.push(item_ptr);
+                        self.freed_set.insert(item_ptr);
                     }
                 }
 
