@@ -578,4 +578,243 @@ mod tests {
         let result = str_from_fixed(&buf);
         assert_eq!(result.len(), 255);
     }
+
+    #[test]
+    fn test_get_task_invalid_id() {
+        clear_all_tasks();
+        let mut task = Task::default();
+        let result = get_task(999999, &mut task as *mut Task);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_update_task_invalid_id() {
+        clear_all_tasks();
+        let mut task = create_test_task("Test", 1);
+        task.id = 999999;
+        let result = update_task(&task as *const Task);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_delete_task_invalid_id() {
+        clear_all_tasks();
+        let result = delete_task(999999);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_concurrent_task_creation() {
+        use std::thread;
+        use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
+
+        clear_all_tasks();
+        let created = Arc::new(AtomicU32::new(0));
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                let created = Arc::clone(&created);
+                thread::spawn(move || {
+                    for j in 0..10 {
+                        let title = format!("Task_{}_{}", i, j);
+                        let task = create_test_task(&title, (i * 10 + j) % 3);
+                        let id = create_task(&task as *const Task);
+                        if id > 0 {
+                            created.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(created.load(Ordering::Relaxed), 80);
+    }
+
+    #[test]
+    fn test_concurrent_task_updates() {
+        use std::thread;
+
+        clear_all_tasks();
+
+        let mut ids = Vec::new();
+        for i in 0..20 {
+            let task = create_test_task(&format!("Task {}", i), 0);
+            let id = create_task(&task as *const Task);
+            ids.push(id);
+        }
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                let ids = ids.clone();
+                thread::spawn(move || {
+                    for (j, &id) in ids.iter().enumerate() {
+                        if j % 4 == i {
+                            let mut task = create_test_task(&format!("Updated {}", j), 1);
+                            task.id = id;
+                            task.priority = (i + j) as u32;
+                            update_task(&task as *const Task);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_task_deletion() {
+        use std::thread;
+        use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
+
+        clear_all_tasks();
+
+        let mut ids = Vec::new();
+        for i in 0..40 {
+            let task = create_test_task(&format!("Task {}", i), 0);
+            let id = create_task(&task as *const Task);
+            ids.push(id);
+        }
+
+        let deleted = Arc::new(AtomicU32::new(0));
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                let ids = ids.clone();
+                let deleted = Arc::clone(&deleted);
+                thread::spawn(move || {
+                    for (j, &id) in ids.iter().enumerate() {
+                        if j % 4 == i {
+                            if delete_task(id) {
+                                deleted.fetch_add(1, Ordering::Relaxed);
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(deleted.load(Ordering::Relaxed), 40);
+    }
+
+    #[test]
+    fn test_task_lifecycle_stress() {
+        use std::thread;
+
+        clear_all_tasks();
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let task = create_test_task(&format!("Task_{}_{}", i, j), j % 3);
+                        let id = create_task(&task as *const Task);
+                        assert!(id > 0);
+
+                        let mut retrieved = Task::default();
+                        assert!(get_task(id, &mut retrieved as *mut Task));
+
+                        let mut updated_task = create_test_task(&format!("Updated_{}_{}", i, j), (j + 1) % 3);
+                        updated_task.id = id;
+                        updated_task.priority = (i + j) as u32;
+                        assert!(update_task(&updated_task as *const Task));
+
+                        assert!(delete_task(id));
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_boundary_priority_values() {
+        clear_all_tasks();
+
+        let priorities = vec![0u32, 1, 2, u32::MAX];
+        for (i, &priority) in priorities.iter().enumerate() {
+            let mut task = create_test_task(&format!("Task {}", i), 0);
+            task.priority = priority;
+            let id = create_task(&task as *const Task);
+            assert!(id > 0);
+        }
+    }
+
+    #[test]
+    fn test_empty_title() {
+        clear_all_tasks();
+        let task = create_test_task("", 0);
+        let id = create_task(&task as *const Task);
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_very_long_title() {
+        clear_all_tasks();
+        let long_title = "a".repeat(500);
+        let task = create_test_task(&long_title, 0);
+        let id = create_task(&task as *const Task);
+        assert!(id > 0);
+
+        let mut retrieved = Task::default();
+        assert!(get_task(id, &mut retrieved as *mut Task));
+    }
+
+    #[test]
+    fn test_special_characters_in_title() {
+        clear_all_tasks();
+        let special_title = "Task!@#$%^&*()_+-={}[]|:;<>?,./";
+        let task = create_test_task(special_title, 0);
+        let id = create_task(&task as *const Task);
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_concurrent_mixed_operations() {
+        use std::thread;
+
+        clear_all_tasks();
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut local_ids = Vec::new();
+
+                    for j in 0..10 {
+                        let task = create_test_task(&format!("T_{}_{}", i, j), j % 3);
+                        let id = create_task(&task as *const Task);
+                        local_ids.push(id);
+                    }
+
+                    for &id in &local_ids[..5] {
+                        let mut task = create_test_task(&format!("Updated_{}", i), 2);
+                        task.id = id;
+                        task.priority = i as u32;
+                        update_task(&task as *const Task);
+                    }
+
+                    for &id in &local_ids[5..] {
+                        delete_task(id);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }
