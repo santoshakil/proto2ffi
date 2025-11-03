@@ -91,4 +91,67 @@ impl FieldType {
             FieldType::Enum(_) => 4,
         }
     }
+
+    pub fn size(&self) -> usize {
+        match self {
+            FieldType::Int32 | FieldType::Uint32 | FieldType::Sint32 | FieldType::Fixed32 | FieldType::Sfixed32 => 4,
+            FieldType::Int64 | FieldType::Uint64 | FieldType::Sint64 | FieldType::Fixed64 | FieldType::Sfixed64 => 8,
+            FieldType::Float => 4,
+            FieldType::Double => 8,
+            FieldType::Bool => 1,
+            FieldType::String { max_length } => *max_length,
+            FieldType::Bytes { max_length } => *max_length,
+            FieldType::Message(_) => 8,
+            FieldType::Enum(_) => 4,
+        }
+    }
+
+    pub fn is_integer(&self) -> bool {
+        matches!(
+            self,
+            FieldType::Int32
+                | FieldType::Int64
+                | FieldType::Uint32
+                | FieldType::Uint64
+                | FieldType::Sint32
+                | FieldType::Sint64
+                | FieldType::Fixed32
+                | FieldType::Fixed64
+                | FieldType::Sfixed32
+                | FieldType::Sfixed64
+        )
+    }
+
+    pub fn is_floating_point(&self) -> bool {
+        matches!(self, FieldType::Float | FieldType::Double)
+    }
+
+    pub fn is_numeric(&self) -> bool {
+        self.is_integer() || self.is_floating_point()
+    }
+
+    pub fn is_signed(&self) -> bool {
+        matches!(
+            self,
+            FieldType::Int32
+                | FieldType::Int64
+                | FieldType::Sint32
+                | FieldType::Sint64
+                | FieldType::Sfixed32
+                | FieldType::Sfixed64
+                | FieldType::Float
+                | FieldType::Double
+        )
+    }
+
+    pub fn is_fixed_width(&self) -> bool {
+        matches!(
+            self,
+            FieldType::Fixed32 | FieldType::Fixed64 | FieldType::Sfixed32 | FieldType::Sfixed64
+        )
+    }
+
+    pub fn is_variable_length(&self) -> bool {
+        matches!(self, FieldType::String { .. } | FieldType::Bytes { .. })
+    }
 }
