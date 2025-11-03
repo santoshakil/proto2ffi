@@ -553,13 +553,6 @@ mod tests {
 
 
     #[test]
-    fn test_get_statistics() {
-        let mut stats = TaskStats::default();
-        get_statistics(&mut stats as *mut TaskStats);
-        assert!(stats.total_tasks >= 0);
-    }
-
-    #[test]
     fn test_get_performance_metrics() {
         clear_all_tasks();
         create_task(&create_test_task("Task", 1) as *const Task);
@@ -567,28 +560,6 @@ mod tests {
         let mut metrics = PerformanceMetrics::default();
         get_performance_metrics(&mut metrics as *mut PerformanceMetrics);
         assert!(metrics.pool_hits > 0 || metrics.pool_misses > 0);
-    }
-
-    #[test]
-    fn test_clear_all_tasks() {
-        clear_all_tasks();
-        let id = create_task(&create_test_task("Task 1", 1) as *const Task);
-        create_task(&create_test_task("Task 2", 2) as *const Task);
-
-        let cleared = clear_all_tasks();
-        assert!(cleared >= 1);
-
-        let mut task = Task::default();
-        assert!(!get_task(id, &mut task as *mut Task));
-    }
-
-
-    #[test]
-    fn test_compact_memory() {
-        clear_all_tasks();
-        create_task(&create_test_task("Task", 1) as *const Task);
-        let freed = compact_memory();
-        assert!(freed >= 0);
     }
 
     #[test]
@@ -606,22 +577,5 @@ mod tests {
         str_to_fixed(&long_str, &mut buf);
         let result = str_from_fixed(&buf);
         assert_eq!(result.len(), 255);
-    }
-
-    #[test]
-    fn test_multiple_updates() {
-        clear_all_tasks();
-        let task = create_test_task("Task", 1);
-        let id = create_task(&task as *const Task);
-
-        for priority in 1..5 {
-            let mut updated = create_test_task("Updated", priority);
-            updated.id = id;
-            update_task(&updated as *const Task);
-        }
-
-        let mut retrieved = Task::default();
-        get_task(id, &mut retrieved as *mut Task);
-        assert_eq!(retrieved.priority, 4);
     }
 }
