@@ -29,12 +29,14 @@ pub mod parser;
 pub mod layout;
 pub mod generator;
 pub mod validator;
+pub mod benchmark;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
 pub use parser::{parse_proto_file, parse_proto_string};
 pub use layout::{Layout, MessageLayout, FieldLayout, EnumLayout, calculate_layout};
 pub use validator::{validate_proto_file, ValidationReport};
+pub use benchmark::{Benchmark, BenchmarkResult};
 
 use std::path::Path;
 
