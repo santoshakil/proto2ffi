@@ -283,3 +283,162 @@ fn parse_enum_field(pair: pest::iterators::Pair<Rule>) -> Result<EnumVariant> {
 
     Ok(EnumVariant { name, number })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_empty_message() {
+        let proto = r#"
+syntax = "proto3";
+message Empty {}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 1);
+        assert_eq!(proto_file.messages[0].name, "Empty");
+        assert_eq!(proto_file.messages[0].fields.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_single_field() {
+        let proto = r#"
+syntax = "proto3";
+message SingleField {
+    int32 value = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 1);
+        assert_eq!(proto_file.messages[0].fields.len(), 1);
+        assert_eq!(proto_file.messages[0].fields[0].name, "value");
+    }
+
+    #[test]
+    fn test_parse_all_primitive_types() {
+        let proto = r#"
+syntax = "proto3";
+message AllTypes {
+    int32 f1 = 1;
+    int64 f2 = 2;
+    uint32 f3 = 3;
+    uint64 f4 = 4;
+    sint32 f5 = 5;
+    sint64 f6 = 6;
+    fixed32 f7 = 7;
+    fixed64 f8 = 8;
+    sfixed32 f9 = 9;
+    sfixed64 f10 = 10;
+    float f11 = 11;
+    double f12 = 12;
+    bool f13 = 13;
+    string f14 = 14;
+    bytes f15 = 15;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages[0].fields.len(), 15);
+    }
+
+    #[test]
+    fn test_parse_repeated_field() {
+        let proto = r#"
+syntax = "proto3";
+message RepeatedTest {
+    repeated int32 values = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert!(proto_file.messages[0].fields[0].repeated);
+    }
+
+    #[test]
+    fn test_parse_enum() {
+        let proto = r#"
+syntax = "proto3";
+enum Status {
+    UNKNOWN = 0;
+    ACTIVE = 1;
+    INACTIVE = 2;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.enums.len(), 1);
+        assert_eq!(proto_file.enums[0].variants.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_with_package() {
+        let proto = r#"
+syntax = "proto3";
+package test.example;
+message Test {
+    int32 value = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.package, Some("test.example".to_string()));
+    }
+
+    #[test]
+    fn test_parse_field_options() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    bytes data = 1 [(proto2ffi.max_length) = 256];
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert!(!proto_file.messages[0].fields[0].options.is_empty());
+    }
+
+    #[test]
+    fn test_parse_message_options() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    option (proto2ffi.pool_size) = 1000;
+    int32 value = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert!(!proto_file.messages[0].options.is_empty());
+    }
+
+    #[test]
+    fn test_parse_invalid_syntax() {
+        let proto = "invalid proto content";
+        let result = parse_proto_string(proto);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_rust_keywords_as_field_names() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 type = 1;
+    int32 match = 2;
+    int32 if = 3;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+}
