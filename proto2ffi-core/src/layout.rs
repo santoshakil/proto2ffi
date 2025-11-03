@@ -11,22 +11,27 @@ pub struct Layout {
 }
 
 impl Layout {
+    #[inline]
     pub fn find_message(&self, name: &str) -> Option<&MessageLayout> {
         self.messages.iter().find(|m| m.name == name)
     }
 
+    #[inline]
     pub fn find_enum(&self, name: &str) -> Option<&EnumLayout> {
         self.enums.iter().find(|e| e.name == name)
     }
 
+    #[inline]
     pub fn total_size(&self) -> usize {
         self.messages.iter().map(|m| m.size).sum()
     }
 
+    #[inline]
     pub fn message_count(&self) -> usize {
         self.messages.len()
     }
 
+    #[inline]
     pub fn enum_count(&self) -> usize {
         self.enums.len()
     }
@@ -42,23 +47,28 @@ pub struct MessageLayout {
 }
 
 impl MessageLayout {
+    #[inline]
     pub fn find_field(&self, name: &str) -> Option<&FieldLayout> {
         self.fields.iter().find(|f| f.name == name)
     }
 
+    #[inline]
     pub fn field_count(&self) -> usize {
         self.fields.iter().filter(|f| !f.name.ends_with("_count")).count()
     }
 
+    #[inline]
     pub fn has_repeated_fields(&self) -> bool {
         self.fields.iter().any(|f| f.repeated)
     }
 
+    #[inline]
     pub fn padding_bytes(&self) -> usize {
         let field_sizes: usize = self.fields.iter().map(|f| f.size).sum();
         self.size.saturating_sub(field_sizes)
     }
 
+    #[inline]
     pub fn get_option(&self, key: &str) -> Option<&String> {
         self.options.get(key)
     }
@@ -85,22 +95,27 @@ pub struct EnumLayout {
 }
 
 impl EnumLayout {
+    #[inline]
     pub fn find_variant(&self, name: &str) -> Option<i32> {
         self.variants.iter().find(|(n, _)| n == name).map(|(_, v)| *v)
     }
 
+    #[inline]
     pub fn find_variant_by_value(&self, value: i32) -> Option<&str> {
         self.variants.iter().find(|(_, v)| *v == value).map(|(n, _)| n.as_str())
     }
 
+    #[inline]
     pub fn variant_count(&self) -> usize {
         self.variants.len()
     }
 
+    #[inline]
     pub fn min_value(&self) -> Option<i32> {
         self.variants.iter().map(|(_, v)| *v).min()
     }
 
+    #[inline]
     pub fn max_value(&self) -> Option<i32> {
         self.variants.iter().map(|(_, v)| *v).max()
     }

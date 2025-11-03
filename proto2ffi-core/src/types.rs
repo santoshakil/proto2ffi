@@ -70,15 +70,18 @@ pub struct EnumVariant {
 }
 
 impl FieldType {
-    pub fn default_string_size() -> usize {
+    #[inline]
+    pub const fn default_string_size() -> usize {
         256
     }
 
-    pub fn default_bytes_size() -> usize {
+    #[inline]
+    pub const fn default_bytes_size() -> usize {
         1024
     }
 
-    pub fn alignment(&self) -> usize {
+    #[inline]
+    pub const fn alignment(&self) -> usize {
         match self {
             FieldType::Int32 | FieldType::Uint32 | FieldType::Sint32 | FieldType::Fixed32 | FieldType::Sfixed32 => 4,
             FieldType::Int64 | FieldType::Uint64 | FieldType::Sint64 | FieldType::Fixed64 | FieldType::Sfixed64 => 8,
@@ -92,6 +95,7 @@ impl FieldType {
         }
     }
 
+    #[inline]
     pub fn size(&self) -> usize {
         match self {
             FieldType::Int32 | FieldType::Uint32 | FieldType::Sint32 | FieldType::Fixed32 | FieldType::Sfixed32 => 4,
@@ -106,7 +110,8 @@ impl FieldType {
         }
     }
 
-    pub fn is_integer(&self) -> bool {
+    #[inline]
+    pub const fn is_integer(&self) -> bool {
         matches!(
             self,
             FieldType::Int32
@@ -122,15 +127,18 @@ impl FieldType {
         )
     }
 
-    pub fn is_floating_point(&self) -> bool {
+    #[inline]
+    pub const fn is_floating_point(&self) -> bool {
         matches!(self, FieldType::Float | FieldType::Double)
     }
 
-    pub fn is_numeric(&self) -> bool {
+    #[inline]
+    pub const fn is_numeric(&self) -> bool {
         self.is_integer() || self.is_floating_point()
     }
 
-    pub fn is_signed(&self) -> bool {
+    #[inline]
+    pub const fn is_signed(&self) -> bool {
         matches!(
             self,
             FieldType::Int32
@@ -144,14 +152,16 @@ impl FieldType {
         )
     }
 
-    pub fn is_fixed_width(&self) -> bool {
+    #[inline]
+    pub const fn is_fixed_width(&self) -> bool {
         matches!(
             self,
             FieldType::Fixed32 | FieldType::Fixed64 | FieldType::Sfixed32 | FieldType::Sfixed64
         )
     }
 
-    pub fn is_variable_length(&self) -> bool {
+    #[inline]
+    pub const fn is_variable_length(&self) -> bool {
         matches!(self, FieldType::String { .. } | FieldType::Bytes { .. })
     }
 }
