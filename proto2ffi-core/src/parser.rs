@@ -441,4 +441,196 @@ message Test {
         let result = parse_proto_string(proto);
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn test_parse_nested_messages() {
+        let proto = r#"
+syntax = "proto3";
+message Outer {
+    message Inner {
+        int32 value = 1;
+    }
+    Inner inner = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_multiple_messages() {
+        let proto = r#"
+syntax = "proto3";
+message First {
+    int32 a = 1;
+}
+message Second {
+    string b = 1;
+}
+message Third {
+    bool c = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 3);
+    }
+
+    #[test]
+    fn test_parse_multiple_enums() {
+        let proto = r#"
+syntax = "proto3";
+enum Color {
+    RED = 0;
+    GREEN = 1;
+    BLUE = 2;
+}
+enum Size {
+    SMALL = 0;
+    MEDIUM = 1;
+    LARGE = 2;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.enums.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_message_with_message_field() {
+        let proto = r#"
+syntax = "proto3";
+message Point {
+    float x = 1;
+    float y = 2;
+}
+message Shape {
+    Point center = 1;
+    float radius = 2;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 2);
+        assert_eq!(proto_file.messages[1].fields.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_repeated_message_field() {
+        let proto = r#"
+syntax = "proto3";
+message Item {
+    int32 id = 1;
+}
+message Collection {
+    repeated Item items = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert!(proto_file.messages[1].fields[0].repeated);
+        assert_eq!(proto_file.messages.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_comments() {
+        let proto = r#"
+syntax = "proto3";
+// This is a comment
+message Test {
+    // Field comment
+    int32 value = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_large_field_number() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 value = 536870911;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_import_statement() {
+        let proto = r#"
+syntax = "proto3";
+import "other.proto";
+message Test {
+    int32 value = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_deeply_nested() {
+        let proto = r#"
+syntax = "proto3";
+message L1 {
+    message L2 {
+        message L3 {
+            message L4 {
+                int32 value = 1;
+            }
+            L4 l4 = 1;
+        }
+        L3 l3 = 1;
+    }
+    L2 l2 = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_mixed_types() {
+        let proto = r#"
+syntax = "proto3";
+message Mixed {
+    int32 num = 1;
+    string text = 2;
+    repeated float values = 3;
+    bool flag = 4;
+    bytes data = 5;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages[0].fields.len(), 5);
+    }
+
+    #[test]
+    fn test_parse_enum_zero_value() {
+        let proto = r#"
+syntax = "proto3";
+enum Priority {
+    LOWEST = 0;
+    LOW = 1;
+    MEDIUM = 2;
+    HIGH = 3;
+    HIGHEST = 4;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.enums[0].variants.len(), 5);
+    }
 }
