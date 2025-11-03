@@ -404,5 +404,235 @@ pub extern "C" fn reset_performance_metrics() {
     metrics.scalar_operations = 0;
 }
 
-// Tests for this module are in the Flutter test suite (flutter/test/image_processing_test.dart)
-// Unit tests here are impractical due to the 67MB ImageBuffer size causing stack/allocation issues
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_buffer(width: u32, height: u32) -> *mut ImageBuffer {
+        use std::alloc::{alloc, Layout};
+
+        unsafe {
+            let layout = Layout::new::<ImageBuffer>();
+            let ptr = alloc(layout) as *mut ImageBuffer;
+            if ptr.is_null() {
+                panic!("Failed to allocate ImageBuffer");
+            }
+
+            (*ptr).data_count = width * height;
+            (*ptr).width = width;
+            (*ptr).height = height;
+            (*ptr).stride = width;
+            (*ptr).color_space = ColorSpace::RGBA as u32;
+
+            for i in 0..(width * height) as usize {
+                (*ptr).data[i] = 0xFF0000FF;
+            }
+
+            ptr
+        }
+    }
+
+    fn free_test_buffer(ptr: *mut ImageBuffer) {
+        use std::alloc::{dealloc, Layout};
+
+        if !ptr.is_null() {
+            unsafe {
+                let layout = Layout::new::<ImageBuffer>();
+                dealloc(ptr as *mut u8, layout);
+            }
+        }
+    }
+
+    #[test]
+    fn test_convert_to_grayscale_basic() {
+        let src = create_test_buffer(100, 100);
+        let dst = create_test_buffer(100, 100);
+
+        let result = convert_to_grayscale(src as *const _, dst as *mut _);
+        assert!(result);
+        unsafe {
+            assert_eq!((*dst).width, 100);
+            assert_eq!((*dst).height, 100);
+            assert_eq!((*dst).color_space, ColorSpace::GRAYSCALE as u32);
+        }
+
+        free_test_buffer(src);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_convert_to_grayscale_null_src() {
+        let dst = create_test_buffer(100, 100);
+        let result = convert_to_grayscale(std::ptr::null(), dst as *mut _);
+        assert!(!result);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_convert_to_grayscale_null_dst() {
+        let src = create_test_buffer(100, 100);
+        let result = convert_to_grayscale(src as *const _, std::ptr::null_mut());
+        assert!(!result);
+        free_test_buffer(src);
+    }
+
+    #[test]
+    fn test_convert_to_grayscale_zero_dimensions() {
+        let src = create_test_buffer(0, 0);
+        let dst = create_test_buffer(100, 100);
+        let result = convert_to_grayscale(src as *const _, dst as *mut _);
+        assert!(!result);
+        free_test_buffer(src);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_apply_box_blur_null_src() {
+        let dst = create_test_buffer(50, 50);
+        let result = apply_box_blur(std::ptr::null(), dst as *mut _, 1);
+        assert!(!result);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_apply_box_blur_null_dst() {
+        let src = create_test_buffer(50, 50);
+        let result = apply_box_blur(src as *const _, std::ptr::null_mut(), 1);
+        assert!(!result);
+        free_test_buffer(src);
+    }
+
+    #[test]
+    fn test_apply_box_blur_zero_radius() {
+        let src = create_test_buffer(50, 50);
+        let dst = create_test_buffer(50, 50);
+        let result = apply_box_blur(src as *const _, dst as *mut _, 0);
+        assert!(!result);
+        free_test_buffer(src);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_adjust_brightness_null_src() {
+        let dst = create_test_buffer(50, 50);
+        let result = adjust_brightness(std::ptr::null(), dst as *mut _, 0.5);
+        assert!(!result);
+        free_test_buffer(dst);
+    }
+
+    #[test]
+    fn test_adjust_brightness_null_dst() {
+        let src = create_test_buffer(50, 50);
+        let result = adjust_brightness(src as *const _, std::ptr::null_mut(), 0.5);
+        assert!(!result);
+        free_test_buffer(src);
+    }
+
+    #[test]
+    fn test_calculate_histogram_null_buffer() {
+        let mut histogram = Histogram {
+            bins_count: 256,
+            bins: [0; 256],
+        };
+        let result = calculate_histogram(std::ptr::null(), &mut histogram as *mut _, 0);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_calculate_histogram_null_histogram() {
+        let buffer = create_test_buffer(50, 50);
+        let result = calculate_histogram(buffer as *const _, std::ptr::null_mut(), 0);
+        assert!(!result);
+        free_test_buffer(buffer);
+    }
+
+    #[test]
+    fn test_calculate_color_stats_null_buffer() {
+        let mut stats = ColorStats {
+            mean_r: 0.0,
+            mean_g: 0.0,
+            mean_b: 0.0,
+            stddev_r: 0.0,
+            stddev_g: 0.0,
+            stddev_b: 0.0,
+            min_r: 0,
+            min_g: 0,
+            min_b: 0,
+            max_r: 0,
+            max_g: 0,
+            max_b: 0,
+        };
+        let result = calculate_color_stats(std::ptr::null(), &mut stats as *mut _);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_calculate_color_stats_null_stats() {
+        let buffer = create_test_buffer(50, 50);
+        let result = calculate_color_stats(buffer as *const _, std::ptr::null_mut());
+        assert!(!result);
+        free_test_buffer(buffer);
+    }
+
+    #[test]
+    fn test_calculate_color_stats_zero_pixels() {
+        let buffer = create_test_buffer(0, 0);
+        let mut stats = ColorStats {
+            mean_r: 0.0,
+            mean_g: 0.0,
+            mean_b: 0.0,
+            stddev_r: 0.0,
+            stddev_g: 0.0,
+            stddev_b: 0.0,
+            min_r: 0,
+            min_g: 0,
+            min_b: 0,
+            max_r: 0,
+            max_g: 0,
+            max_b: 0,
+        };
+        let result = calculate_color_stats(buffer as *const _, &mut stats as *mut _);
+        assert!(!result);
+        free_test_buffer(buffer);
+    }
+
+    #[test]
+    fn test_performance_metrics_get() {
+        reset_performance_metrics();
+        let mut metrics = PerformanceMetrics {
+            total_pixels_processed: 0,
+            total_time_ns: 0,
+            megapixels_per_second: 0.0,
+            cache_hits: 0,
+            cache_misses: 0,
+            simd_operations: 0,
+            scalar_operations: 0,
+        };
+
+        let result = get_performance_metrics(&mut metrics as *mut _);
+        assert!(result);
+        assert_eq!(metrics.total_pixels_processed, 0);
+    }
+
+    #[test]
+    fn test_performance_metrics_null() {
+        let result = get_performance_metrics(std::ptr::null_mut());
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_grayscale_scalar() {
+        let src = vec![0xFF0000FF; 100];
+        let mut dst = vec![0; 100];
+        grayscale_scalar(&src, &mut dst, 10, 10);
+
+        for &pixel in &dst {
+            let r = (pixel >> 24) & 0xFF;
+            let g = (pixel >> 16) & 0xFF;
+            let b = (pixel >> 8) & 0xFF;
+            assert_eq!(r, g);
+            assert_eq!(g, b);
+        }
+    }
+
+}
