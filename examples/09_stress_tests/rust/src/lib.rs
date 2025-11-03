@@ -286,3 +286,76 @@ pub extern "C" fn stress_measure_wide_message_size() -> usize {
 pub extern "C" fn stress_measure_huge_message_size() -> usize {
     std::mem::size_of::<HugeMessage>()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deep_nesting_allocation() {
+        let ptr = stress_create_deep_nesting();
+        assert!(!ptr.is_null());
+        stress_destroy_deep_nesting(ptr);
+    }
+
+    #[test]
+    fn test_wide_message_allocation() {
+        let ptr = stress_create_wide_message();
+        assert!(!ptr.is_null());
+        stress_destroy_wide_message(ptr);
+    }
+
+    #[test]
+    fn test_huge_message_allocation() {
+        let ptr = stress_create_huge_message();
+        assert!(!ptr.is_null());
+        stress_destroy_huge_message(ptr);
+    }
+
+    #[test]
+    fn test_massive_array_allocation() {
+        let ptr = stress_create_massive_array();
+        assert!(!ptr.is_null());
+        stress_destroy_massive_array(ptr);
+    }
+
+    #[test]
+    fn test_recursive_node_allocation() {
+        let ptr = stress_create_recursive_node();
+        assert!(!ptr.is_null());
+        stress_destroy_recursive_node(ptr);
+    }
+
+    #[test]
+    fn test_repeated_allocations() {
+        for _ in 0..1000 {
+            let ptr = stress_create_deep_nesting();
+            assert!(!ptr.is_null());
+            stress_destroy_deep_nesting(ptr);
+        }
+    }
+
+    #[test]
+    fn test_multiple_types_concurrent() {
+        let p1 = stress_create_deep_nesting();
+        let p2 = stress_create_wide_message();
+        let p3 = stress_create_huge_message();
+        
+        assert!(!p1.is_null());
+        assert!(!p2.is_null());
+        assert!(!p3.is_null());
+        
+        stress_destroy_deep_nesting(p1);
+        stress_destroy_wide_message(p2);
+        stress_destroy_huge_message(p3);
+    }
+
+    #[test]
+    fn test_null_pointer_safety() {
+        stress_destroy_deep_nesting(ptr::null_mut());
+        stress_destroy_wide_message(ptr::null_mut());
+        stress_destroy_huge_message(ptr::null_mut());
+        stress_destroy_massive_array(ptr::null_mut());
+        stress_destroy_recursive_node(ptr::null_mut());
+    }
+}
