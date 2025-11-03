@@ -1393,4 +1393,219 @@ mod matrix_tests {
         let mut result = vec![1.0; 2];
         vector_normalize_f32(&vec, &mut result);
     }
+
+    #[test]
+    fn test_concurrent_simd_add() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..50 {
+                        let a: Vec<f32> = (0..100).map(|x| (i * 100 + j + x) as f32).collect();
+                        let b: Vec<f32> = (0..100).map(|x| (x + 1) as f32).collect();
+                        let mut result = vec![0.0; 100];
+
+                        vector_add_f32(&a, &b, &mut result);
+
+                        for k in 0..100 {
+                            assert_eq!(result[k], a[k] + b[k]);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_matrix_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..100 {
+                        let a = vec![
+                            (i + j + 1) as f32, (i + j + 2) as f32,
+                            (i + j + 3) as f32, (i + j + 4) as f32,
+                        ];
+                        let b = vec![
+                            (j + 1) as f32, (j + 2) as f32,
+                            (j + 3) as f32, (j + 4) as f32,
+                        ];
+                        let mut result = vec![0.0; 4];
+
+                        matrix_multiply_f32(&a, 2, 2, &b, 2, 2, &mut result);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_large_vector_operations() {
+        let size = 10000;
+        let a: Vec<f32> = (0..size).map(|x| x as f32).collect();
+        let b: Vec<f32> = (0..size).map(|x| (x + 1) as f32).collect();
+        let mut result = vec![0.0; size];
+
+        vector_add_f32(&a, &b, &mut result);
+        for i in 0..size {
+            assert_eq!(result[i], a[i] + b[i]);
+        }
+
+        vector_subtract_f32(&a, &b, &mut result);
+        for i in 0..size {
+            assert_eq!(result[i], a[i] - b[i]);
+        }
+    }
+
+    #[test]
+    fn test_simd_edge_cases_empty() {
+        let a: Vec<f32> = vec![];
+        let b: Vec<f32> = vec![];
+        let mut result: Vec<f32> = vec![];
+
+        vector_add_f32(&a, &b, &mut result);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_simd_edge_cases_single() {
+        let a = vec![5.0];
+        let b = vec![3.0];
+        let mut result = vec![0.0];
+
+        vector_add_f32(&a, &b, &mut result);
+        assert_eq!(result[0], 8.0);
+
+        vector_subtract_f32(&a, &b, &mut result);
+        assert_eq!(result[0], 2.0);
+    }
+
+    #[test]
+    fn test_simd_non_aligned_sizes() {
+        for size in [7, 13, 21, 37, 63, 127] {
+            let a: Vec<f32> = (0..size).map(|x| x as f32).collect();
+            let b: Vec<f32> = (0..size).map(|x| (x + 1) as f32).collect();
+            let mut result = vec![0.0; size];
+
+            vector_add_f32(&a, &b, &mut result);
+            for i in 0..size {
+                assert_eq!(result[i], a[i] + b[i]);
+            }
+        }
+    }
+
+    #[test]
+    fn test_concurrent_convolution() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let signal: Vec<f32> = (0..50).map(|x| (i * 10 + j + x) as f32).collect();
+                        let kernel = vec![1.0, 2.0, 1.0];
+                        let mut result = vec![0.0; signal.len() + kernel.len() - 1];
+
+                        convolution_1d_f32(&signal, &kernel, &mut result);
+                        assert!(result.len() == signal.len() + kernel.len() - 1);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_vector_normalization() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 1..50 {
+                        let vec: Vec<f32> = (1..=100).map(|x| (i * 10 + j + x) as f32).collect();
+                        let mut result = vec![0.0; vec.len()];
+
+                        vector_normalize_f32(&vec, &mut result);
+
+                        let magnitude: f32 = result.iter().map(|x| x * x).sum::<f32>().sqrt();
+                        assert!((magnitude - 1.0).abs() < 0.01);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_mixed_concurrent_simd_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..20 {
+                        let size = 100;
+                        let a: Vec<f32> = (0..size).map(|x| (i * 100 + j + x) as f32).collect();
+                        let b: Vec<f32> = (0..size).map(|x| (x + 1) as f32).collect();
+                        let mut result = vec![0.0; size];
+
+                        vector_add_f32(&a, &b, &mut result);
+                        vector_subtract_f32(&a, &b, &mut result);
+                        vector_scale_f32(&a, 2.0, &mut result);
+
+                        let mag = vector_magnitude_f32(&a);
+                        assert!(mag > 0.0);
+
+                        vector_normalize_f32(&a, &mut result);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_extreme_concurrent_simd_load() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..16)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..10 {
+                        let a: Vec<f32> = (0..50).map(|x| (i * 10 + j + x) as f32).collect();
+                        let b: Vec<f32> = (0..50).map(|x| (x + 1) as f32).collect();
+                        let mut result = vec![0.0; 50];
+
+                        vector_add_f32(&a, &b, &mut result);
+                        let _mag = vector_magnitude_f32(&result);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }

@@ -549,7 +549,7 @@ mod tests {
         use std::thread;
 
         let handles: Vec<_> = (0..4)
-            .map(|i| {
+            .map(|_i| {
                 thread::spawn(move || {
                     let body = game_create_rigidbody(1.0, true);
                     let transform = game_create_transform(0.0, 0.0, 0.0);

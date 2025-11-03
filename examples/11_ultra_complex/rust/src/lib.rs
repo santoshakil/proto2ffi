@@ -1118,4 +1118,262 @@ mod tests {
         let len = (result.x*result.x + result.y*result.y + result.z*result.z + result.w*result.w).sqrt();
         assert!((len - 1.0).abs() < 0.001);
     }
+
+    #[test]
+    fn test_concurrent_sorting_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let mut data = vec![
+                            (i * 10 + j + 5) as i32,
+                            (i * 10 + j + 2) as i32,
+                            (i * 10 + j + 8) as i32,
+                            (i * 10 + j + 1) as i32,
+                            (i * 10 + j + 9) as i32,
+                        ];
+
+                        quicksort_i32(data.as_mut_ptr(), data.len());
+                        for k in 1..data.len() {
+                            assert!(data[k] >= data[k - 1]);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_matrix_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..50 {
+                        let a = vec![
+                            (i + j + 1) as f64, (i + j + 2) as f64,
+                            (i + j + 3) as f64, (i + j + 4) as f64,
+                        ];
+                        let b = vec![
+                            (i * 2 + j + 1) as f64, (i * 2 + j + 2) as f64,
+                            (i * 2 + j + 3) as f64, (i * 2 + j + 4) as f64,
+                        ];
+                        let mut result = vec![0.0; 4];
+
+                        assert!(matrix_multiply_f64(
+                            a.as_ptr(), 2, 2,
+                            b.as_ptr(), 2, 2,
+                            result.as_mut_ptr()
+                        ));
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_vector_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 1..101 {
+                        let v1 = Vector3 {
+                            x: (i * 10 + j) as f32,
+                            y: (i * 5 + j) as f32,
+                            z: (i * 2 + j) as f32,
+                        };
+                        let v2 = Vector3 {
+                            x: (j + 1) as f32,
+                            y: (j + 2) as f32,
+                            z: (j + 3) as f32,
+                        };
+
+                        let dot = vector3_dot(&v1, &v2);
+                        assert!(dot > 0.0);
+
+                        let mut cross = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+                        vector3_cross(&v1, &v2, &mut cross);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_statistical_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..50 {
+                        let data = vec![
+                            (i * 10 + j + 1) as f64,
+                            (i * 10 + j + 2) as f64,
+                            (i * 10 + j + 3) as f64,
+                            (i * 10 + j + 4) as f64,
+                            (i * 10 + j + 5) as f64,
+                        ];
+
+                        let mean = calculate_mean_f64(data.as_ptr(), data.len());
+                        assert!(mean > 0.0);
+
+                        let std_dev = calculate_std_dev_f64(data.as_ptr(), data.len());
+                        assert!(std_dev >= 0.0);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_search_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let data: Vec<i32> = (0..100).map(|x| (i * 1000 + x) as i32).collect();
+                        let target = (i * 1000 + 50) as i32;
+
+                        let result = binary_search_i32(data.as_ptr(), data.len(), target);
+                        assert!(result >= 0);
+                        assert_eq!(data[result as usize], target);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_fibonacci_calculations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                thread::spawn(|| {
+                    for n in 1..20 {
+                        let fib = fibonacci(n);
+                        assert!(fib > 0);
+                        if n > 1 {
+                            assert!(fib >= fibonacci(n - 1));
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_prime_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let n = (i * 100 + j + 10) as i32;
+                        let is_prime = is_prime_i32(n);
+                        let prime_count = count_primes_up_to(n);
+                        assert!(prime_count >= 0);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_mixed_concurrent_complex_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 1..20 {
+                        let mut sort_data = vec![(i * 10 + j + 5) as i32, (i * 10 + j + 2) as i32];
+                        quicksort_i32(sort_data.as_mut_ptr(), sort_data.len());
+
+                        let v = Vector3 {
+                            x: (i + j) as f32,
+                            y: (i * 2 + j) as f32,
+                            z: (i * 3 + j) as f32,
+                        };
+                        let len = vector3_length(&v);
+                        assert!(len > 0.0);
+
+                        let factorial_val = factorial((j % 10) as i32);
+                        assert!(factorial_val > 0);
+
+                        let data_f64 = vec![(i + j + 1) as f64, (i + j + 2) as f64];
+                        let mean = calculate_mean_f64(data_f64.as_ptr(), data_f64.len());
+                        assert!(mean > 0.0);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_extreme_concurrent_complex_load() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..16)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 1..10 {
+                        let mut data = vec![(i * 10 + j) as i32, (i * 10 + j + 5) as i32];
+                        heapsort_i32(data.as_mut_ptr(), data.len());
+
+                        let v1 = Vector3 { x: i as f32, y: j as f32, z: (i + j) as f32 };
+                        let v2 = Vector3 { x: 1.0, y: 2.0, z: 3.0 };
+                        let _dot = vector3_dot(&v1, &v2);
+
+                        let _fib = fibonacci((j % 15) as u64);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }
