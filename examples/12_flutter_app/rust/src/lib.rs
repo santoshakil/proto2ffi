@@ -485,3 +485,143 @@ pub extern "C" fn free_task_list(ptr: *mut Task, len: usize) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_task(title: &str, priority: u32) -> Task {
+        let mut task = Task::default();
+        str_to_fixed(title, &mut task.title);
+        str_to_fixed("Test description", &mut task.description);
+        task.priority = priority;
+        task.completed = 0;
+        task
+    }
+
+    #[test]
+    fn test_create_task() {
+        clear_all_tasks();
+        let task = create_test_task("Test Task", 1);
+        let id = create_task(&task as *const Task);
+        assert!(id > 0);
+    }
+
+    #[test]
+    fn test_get_task() {
+        clear_all_tasks();
+        let task = create_test_task("Get Test", 2);
+        let id = create_task(&task as *const Task);
+
+        let mut retrieved = Task::default();
+        assert!(get_task(id, &mut retrieved as *mut Task));
+        assert_eq!(retrieved.id, id);
+        assert_eq!(retrieved.priority, 2);
+    }
+
+    #[test]
+    fn test_get_nonexistent_task() {
+        clear_all_tasks();
+        let mut task = Task::default();
+        assert!(!get_task(99999, &mut task as *mut Task));
+    }
+
+    #[test]
+    fn test_update_nonexistent_task() {
+        clear_all_tasks();
+        let mut task = create_test_task("Nonexistent", 1);
+        task.id = 99999;
+        assert!(!update_task(&task as *const Task));
+    }
+
+    #[test]
+    fn test_delete_task() {
+        clear_all_tasks();
+        let task = create_test_task("To Delete", 1);
+        let id = create_task(&task as *const Task);
+        assert!(delete_task(id));
+
+        let mut retrieved = Task::default();
+        assert!(!get_task(id, &mut retrieved as *mut Task));
+    }
+
+    #[test]
+    fn test_delete_nonexistent_task() {
+        clear_all_tasks();
+        assert!(!delete_task(99999));
+    }
+
+
+    #[test]
+    fn test_get_statistics() {
+        let mut stats = TaskStats::default();
+        get_statistics(&mut stats as *mut TaskStats);
+        assert!(stats.total_tasks >= 0);
+    }
+
+    #[test]
+    fn test_get_performance_metrics() {
+        clear_all_tasks();
+        create_task(&create_test_task("Task", 1) as *const Task);
+
+        let mut metrics = PerformanceMetrics::default();
+        get_performance_metrics(&mut metrics as *mut PerformanceMetrics);
+        assert!(metrics.pool_hits > 0 || metrics.pool_misses > 0);
+    }
+
+    #[test]
+    fn test_clear_all_tasks() {
+        clear_all_tasks();
+        let id = create_task(&create_test_task("Task 1", 1) as *const Task);
+        create_task(&create_test_task("Task 2", 2) as *const Task);
+
+        let cleared = clear_all_tasks();
+        assert!(cleared >= 1);
+
+        let mut task = Task::default();
+        assert!(!get_task(id, &mut task as *mut Task));
+    }
+
+
+    #[test]
+    fn test_compact_memory() {
+        clear_all_tasks();
+        create_task(&create_test_task("Task", 1) as *const Task);
+        let freed = compact_memory();
+        assert!(freed >= 0);
+    }
+
+    #[test]
+    fn test_str_from_fixed() {
+        let mut buf = [0u8; 256];
+        str_to_fixed("Hello", &mut buf);
+        let result = str_from_fixed(&buf);
+        assert_eq!(result, "Hello");
+    }
+
+    #[test]
+    fn test_str_to_fixed_truncation() {
+        let mut buf = [0u8; 256];
+        let long_str = "a".repeat(300);
+        str_to_fixed(&long_str, &mut buf);
+        let result = str_from_fixed(&buf);
+        assert_eq!(result.len(), 255);
+    }
+
+    #[test]
+    fn test_multiple_updates() {
+        clear_all_tasks();
+        let task = create_test_task("Task", 1);
+        let id = create_task(&task as *const Task);
+
+        for priority in 1..5 {
+            let mut updated = create_test_task("Updated", priority);
+            updated.id = id;
+            update_task(&updated as *const Task);
+        }
+
+        let mut retrieved = Task::default();
+        get_task(id, &mut retrieved as *mut Task);
+        assert_eq!(retrieved.priority, 4);
+    }
+}
