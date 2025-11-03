@@ -403,4 +403,236 @@ mod tests {
         assert_eq!(stats.bytes_processed, 50000);
         assert_eq!(stats.frames_dropped, 5);
     }
+
+    #[test]
+    fn test_video_concurrent_frame_allocation() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut ptrs = Vec::new();
+                    for j in 0..50 {
+                        let ptr = video_create_frame_metadata(
+                            (i * 1000 + j) as u64,
+                            (i * 2000 + j) as u64,
+                            (i * 1900 + j) as u64,
+                            i,
+                            j,
+                            j % 2 == 0,
+                            1920,
+                            1080,
+                            5000000,
+                        );
+                        assert!(!ptr.is_null());
+                        ptrs.push(ptr);
+                    }
+                    for ptr in ptrs {
+                        video_free_frame_metadata(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_video_concurrent_statistics_updates() {
+        use std::thread;
+        use std::sync::atomic::{AtomicU64, Ordering};
+        use std::sync::Arc;
+
+        let completed = Arc::new(AtomicU64::new(0));
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let completed = Arc::clone(&completed);
+                thread::spawn(move || {
+                    for _ in 0..100 {
+                        video_update_statistics(10, 5000, 1, 100_000_000);
+                        completed.fetch_add(1, Ordering::Relaxed);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(completed.load(Ordering::Relaxed), 800);
+    }
+
+    #[test]
+    fn test_video_concurrent_jitter_calculation() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let timestamps = Arc::new(vec![
+            1000u64, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+        ]);
+
+        let handles: Vec<_> = (0..4)
+            .map(|_| {
+                let timestamps = Arc::clone(&timestamps);
+                thread::spawn(move || {
+                    for _ in 0..100 {
+                        let jitter = video_calculate_jitter(
+                            timestamps.as_ptr(),
+                            timestamps.len() as u32,
+                        );
+                        assert!(jitter >= 0.0);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_video_pool_stress_test() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let metadata_ptr = video_create_frame_metadata(
+                            (i * 100 + j) as u64,
+                            (i * 200 + j) as u64,
+                            (i * 190 + j) as u64,
+                            i,
+                            j,
+                            true,
+                            1920,
+                            1080,
+                            5000000,
+                        );
+                        assert!(!metadata_ptr.is_null());
+
+                        let y_data = vec![100u32; 50];
+                        let u_data = vec![50u32; 25];
+                        let v_data = vec![50u32; 25];
+
+                        let compressed_ptr = video_compress_frame(
+                            y_data.as_ptr(),
+                            y_data.len() as u32,
+                            u_data.as_ptr(),
+                            u_data.len() as u32,
+                            v_data.as_ptr(),
+                            v_data.len() as u32,
+                            320,
+                            240,
+                            1000000,
+                            75.0,
+                        );
+                        assert!(!compressed_ptr.is_null());
+
+                        video_free_frame_metadata(metadata_ptr);
+                        video_free_compressed_frame(compressed_ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let stats = video_pool_stats();
+        assert!(stats.metadata_capacity > 0);
+        assert!(stats.compressed_capacity > 0);
+    }
+
+    #[test]
+    fn test_video_mixed_concurrent_operations() {
+        use std::thread;
+
+        video_reset_statistics();
+        let initial_stats = video_get_statistics();
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..20 {
+                        let ptr = video_create_frame_metadata(
+                            (i * 1000 + j + 1) as u64,
+                            (i * 2000 + j + 1) as u64,
+                            (i * 1900 + j + 1) as u64,
+                            i,
+                            j,
+                            j % 2 == 0,
+                            1920,
+                            1080,
+                            5000000,
+                        );
+                        assert!(!ptr.is_null());
+
+                        video_update_statistics(1, 1000, 0, 16_666_667);
+
+                        let sync = video_sync_timestamps(
+                            (i * 1000 + j + 1) as u64,
+                            (i * 900 + j + 1) as u64,
+                            (i * 800 + j + 1) as u64,
+                            (i * 950 + j + 1) as u64,
+                        );
+                        assert!(sync.presentation_time > 0);
+
+                        video_free_frame_metadata(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let stats = video_get_statistics();
+        assert!(stats.frames_processed >= initial_stats.frames_processed + 80);
+    }
+
+    #[test]
+    fn test_video_extreme_concurrent_load() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..16)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut ptrs = Vec::new();
+                    for j in 0..10 {
+                        let ptr = video_create_frame_metadata(
+                            (i * 100 + j) as u64,
+                            (i * 200 + j) as u64,
+                            (i * 190 + j) as u64,
+                            i,
+                            j,
+                            true,
+                            1920,
+                            1080,
+                            5000000,
+                        );
+                        if !ptr.is_null() {
+                            ptrs.push(ptr);
+                        }
+                    }
+
+                    for ptr in ptrs {
+                        video_free_frame_metadata(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }

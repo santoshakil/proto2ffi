@@ -441,4 +441,282 @@ mod tests {
         game_free_entity(ptr1);
         game_free_entity(ptr2);
     }
+
+    #[test]
+    fn test_game_concurrent_entity_creation() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut entities = Vec::new();
+                    for j in 0..25 {
+                        let name = format!("Entity_{}", i * 100 + j);
+                        let ptr = game_create_entity(
+                            (i * 100 + j) as u32,
+                            name.as_ptr(),
+                            name.len() as u32,
+                        );
+                        assert!(!ptr.is_null());
+                        entities.push(ptr);
+                    }
+                    for ptr in entities {
+                        game_free_entity(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_concurrent_transform_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut transforms = Vec::new();
+                    for j in 0..50 {
+                        let ptr = game_create_transform(
+                            (i * 10 + j) as f32,
+                            (i * 20 + j) as f32,
+                            (i * 30 + j) as f32,
+                        );
+                        assert!(!ptr.is_null());
+
+                        game_set_rotation(
+                            ptr,
+                            (j as f32) * 0.1,
+                            (j as f32) * 0.2,
+                            (j as f32) * 0.3,
+                        );
+
+                        transforms.push(ptr);
+                    }
+
+                    for ptr in transforms {
+                        game_free_transform(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_concurrent_rigidbody_updates() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut bodies = Vec::new();
+                    for j in 0..25 {
+                        let ptr = game_create_rigidbody((i + j + 1) as f32, j % 2 == 0);
+                        assert!(!ptr.is_null());
+
+                        game_apply_force(
+                            ptr,
+                            (i * 10 + j) as f32,
+                            (i * 5 + j) as f32,
+                            (i * 2 + j) as f32,
+                        );
+
+                        bodies.push(ptr);
+                    }
+
+                    for ptr in bodies {
+                        game_free_rigidbody(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_concurrent_physics_simulation() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    let body = game_create_rigidbody(1.0, true);
+                    let transform = game_create_transform(0.0, 0.0, 0.0);
+
+                    for _ in 0..100 {
+                        game_apply_force(body, 10.0, 5.0, 2.0);
+                        game_physics_step(body, 1, 0.016);
+                        game_update_transform(transform, body, 0.016);
+                    }
+
+                    game_free_rigidbody(body);
+                    game_free_transform(transform);
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_concurrent_vector_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 1..101 {
+                        let mut v = Vector3 {
+                            x: (i * 10 + j) as f32,
+                            y: (i * 5 + j) as f32,
+                            z: (i * 2 + j) as f32,
+                        };
+
+                        let len = game_vector_length(v);
+                        assert!(len > 0.0);
+
+                        game_vector_normalize(&mut v);
+                        let normalized_len = game_vector_length(v);
+                        if normalized_len > 0.0 {
+                            assert!((normalized_len - 1.0).abs() < 0.01);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_concurrent_frame_stats_updates() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..50 {
+                        game_update_frame_stats(
+                            (i * 1000 + j) as u64,
+                            16666,
+                            (i * 10 + j) as u32,
+                            (i * 100 + j) as u32,
+                        );
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let stats = game_get_frame_stats();
+        assert!(stats.frame_number > 0);
+    }
+
+    #[test]
+    fn test_game_mixed_concurrent_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    for j in 0..20 {
+                        let entity = game_create_entity((i * 100 + j) as u32, std::ptr::null(), 0);
+                        let transform = game_create_transform(
+                            (i + j) as f32,
+                            (i * 2 + j) as f32,
+                            (i * 3 + j) as f32,
+                        );
+                        let body = game_create_rigidbody((j + 1) as f32, true);
+
+                        game_set_rotation(transform, 0.0, 0.0, (j as f32) * 0.1);
+                        game_apply_force(body, 10.0, 0.0, 0.0);
+                        game_physics_step(body, 1, 0.016);
+                        game_update_transform(transform, body, 0.016);
+
+                        let mut v = Vector3 {
+                            x: (i + j) as f32,
+                            y: (i * 2 + j) as f32,
+                            z: (i * 3 + j) as f32,
+                        };
+                        game_vector_normalize(&mut v);
+
+                        game_free_entity(entity);
+                        game_free_transform(transform);
+                        game_free_rigidbody(body);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_game_extreme_concurrent_load() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..16)
+            .map(|i| {
+                thread::spawn(move || {
+                    let mut entities = Vec::new();
+                    let mut transforms = Vec::new();
+                    let mut bodies = Vec::new();
+
+                    for j in 0..10 {
+                        let entity = game_create_entity((i * 100 + j) as u32, std::ptr::null(), 0);
+                        let transform = game_create_transform(
+                            (i + j) as f32,
+                            (i * 2 + j) as f32,
+                            (i * 3 + j) as f32,
+                        );
+                        let body = game_create_rigidbody((j + 1) as f32, true);
+
+                        if !entity.is_null() {
+                            entities.push(entity);
+                        }
+                        if !transform.is_null() {
+                            transforms.push(transform);
+                        }
+                        if !body.is_null() {
+                            bodies.push(body);
+                        }
+                    }
+
+                    for entity in entities {
+                        game_free_entity(entity);
+                    }
+                    for transform in transforms {
+                        game_free_transform(transform);
+                    }
+                    for body in bodies {
+                        game_free_rigidbody(body);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
 }
