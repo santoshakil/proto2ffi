@@ -583,3 +583,559 @@ pub extern "C" fn free_single_field(ptr: *mut SingleField) {
         unsafe { drop(Box::from_raw(ptr)) };
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_integer_limits_min() {
+        let ptr = create_integer_limits(
+            i32::MIN, 0, 0, 0,
+            i64::MIN, 0, 0, 0,
+            i32::MIN, 0, i64::MIN, 0,
+            0, 0, 0, 0, i32::MIN, 0, i64::MIN, 0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(msg.int32_min, i32::MIN);
+        assert_eq!(msg.int64_min, i64::MIN);
+        assert_eq!(msg.sint32_min, i32::MIN);
+        assert_eq!(msg.sint64_min, i64::MIN);
+        assert_eq!(msg.sfixed32_min, i32::MIN);
+        assert_eq!(msg.sfixed64_min, i64::MIN);
+        free_integer_limits(ptr);
+    }
+
+    #[test]
+    fn test_integer_limits_max() {
+        let ptr = create_integer_limits(
+            0, i32::MAX, 0, u32::MAX,
+            0, i64::MAX, 0, u64::MAX,
+            0, i32::MAX, 0, i64::MAX,
+            0, u32::MAX, 0, u64::MAX,
+            0, i32::MAX, 0, i64::MAX,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(msg.int32_max, i32::MAX);
+        assert_eq!(msg.uint32_max, u32::MAX);
+        assert_eq!(msg.int64_max, i64::MAX);
+        assert_eq!(msg.uint64_max, u64::MAX);
+        assert_eq!(msg.sint32_max, i32::MAX);
+        assert_eq!(msg.sint64_max, i64::MAX);
+        assert_eq!(msg.fixed32_max, u32::MAX);
+        assert_eq!(msg.fixed64_max, u64::MAX);
+        assert_eq!(msg.sfixed32_max, i32::MAX);
+        assert_eq!(msg.sfixed64_max, i64::MAX);
+        free_integer_limits(ptr);
+    }
+
+    #[test]
+    fn test_float_edge_cases_infinity() {
+        let ptr = create_float_edge_cases(
+            0.0, -0.0, f32::INFINITY, f32::NEG_INFINITY, f32::NAN,
+            f32::MIN_POSITIVE, f32::MAX, f32::MIN,
+            0.0, -0.0, f64::INFINITY, f64::NEG_INFINITY, f64::NAN,
+            f64::MIN_POSITIVE, f64::MAX, f64::MIN,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert!(msg.infinity.is_infinite() && msg.infinity > 0.0);
+        assert!(msg.negative_infinity.is_infinite() && msg.negative_infinity < 0.0);
+        assert!(msg.nan.is_nan());
+        assert!(msg.d_infinity.is_infinite() && msg.d_infinity > 0.0);
+        assert!(msg.d_negative_infinity.is_infinite() && msg.d_negative_infinity < 0.0);
+        assert!(msg.d_nan.is_nan());
+        free_float_edge_cases(ptr);
+    }
+
+    #[test]
+    fn test_float_edge_cases_extremes() {
+        let ptr = create_float_edge_cases(
+            0.0, -0.0, 0.0, 0.0, 0.0,
+            f32::MIN_POSITIVE, f32::MAX, f32::MIN,
+            0.0, -0.0, 0.0, 0.0, 0.0,
+            f64::MIN_POSITIVE, f64::MAX, f64::MIN,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(msg.min_positive, f32::MIN_POSITIVE);
+        assert_eq!(msg.max_value, f32::MAX);
+        assert_eq!(msg.min_value, f32::MIN);
+        assert_eq!(msg.d_min_positive, f64::MIN_POSITIVE);
+        assert_eq!(msg.d_max_value, f64::MAX);
+        assert_eq!(msg.d_min_value, f64::MIN);
+        free_float_edge_cases(ptr);
+    }
+
+    #[test]
+    fn test_float_edge_cases_zero() {
+        let ptr = create_float_edge_cases(
+            0.0, -0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, -0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(msg.zero, 0.0);
+        assert_eq!(msg.negative_zero, -0.0);
+        assert_eq!(msg.d_zero, 0.0);
+        assert_eq!(msg.d_negative_zero, -0.0);
+        free_float_edge_cases(ptr);
+    }
+
+    #[test]
+    fn test_string_sizes_empty() {
+        let empty = b"";
+        let ptr = create_string_sizes(
+            empty.as_ptr(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.empty), "");
+        free_string_sizes(ptr);
+    }
+
+    #[test]
+    fn test_string_sizes_255_bytes() {
+        let s = "a".repeat(255);
+        let ptr = create_string_sizes(
+            std::ptr::null(), 0,
+            s.as_ptr(), s.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.small_255), s);
+        free_string_sizes(ptr);
+    }
+
+    #[test]
+    fn test_string_sizes_special_chars() {
+        let s = "Hello 世界 🦀 \n\t\r";
+        let ptr = create_string_sizes(
+            std::ptr::null(), 0,
+            s.as_ptr(), s.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.small_255), s);
+        free_string_sizes(ptr);
+    }
+
+    #[test]
+    fn test_string_roundtrip() {
+        let s1 = "test";
+        let s2 = "a".repeat(100);
+        let ptr = create_string_sizes(
+            s1.as_ptr(), s1.len(),
+            s2.as_ptr(), s2.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+
+        let mut out_ptr: *const u8 = std::ptr::null();
+        let mut out_len: usize = 0;
+        let mut small_ptr: *const u8 = std::ptr::null();
+        let mut small_len: usize = 0;
+        let mut med_ptr: *const u8 = std::ptr::null();
+        let mut med_len: usize = 0;
+        let mut large_ptr: *const u8 = std::ptr::null();
+        let mut large_len: usize = 0;
+
+        let result = verify_string_roundtrip(
+            ptr,
+            &mut out_ptr, &mut out_len,
+            &mut small_ptr, &mut small_len,
+            &mut med_ptr, &mut med_len,
+            &mut large_ptr, &mut large_len,
+        );
+        assert!(result);
+        assert_eq!(out_len, s1.len());
+        assert_eq!(small_len, s2.len());
+
+        free_string_sizes(ptr);
+    }
+
+    #[test]
+    fn test_array_sizes_empty() {
+        let empty: Vec<i32> = vec![];
+        let ptr = create_array_sizes(
+            empty.as_ptr(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        free_array_sizes(ptr);
+    }
+
+    #[test]
+    fn test_array_sizes_small() {
+        let arr: Vec<i32> = (0..100).collect();
+        let ptr = create_array_sizes(
+            std::ptr::null(), 0,
+            arr.as_ptr(), arr.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        free_array_sizes(ptr);
+    }
+
+    #[test]
+    fn test_array_sizes_large() {
+        let arr: Vec<i32> = (0..10000).collect();
+        let ptr = create_array_sizes(
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            arr.as_ptr(), arr.len(),
+        );
+        assert!(!ptr.is_null());
+        free_array_sizes(ptr);
+    }
+
+    #[test]
+    fn test_deeply_nested_creation() {
+        let v1 = b"level1";
+        let v10 = b"level10";
+        let ptr = create_deeply_nested(
+            v1.as_ptr(), v1.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            v10.as_ptr(), v10.len(),
+            42,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.value), "level1");
+        assert_eq!(msg.nested.nested.nested.nested.nested.nested.nested.nested.nested.number, 42);
+        free_level1(ptr);
+    }
+
+    #[test]
+    fn test_deeply_nested_traversal() {
+        let ptr = create_deeply_nested(
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            i32::MAX,
+        );
+        assert!(!ptr.is_null());
+        let value = get_deeply_nested_value(ptr);
+        assert_eq!(value, i32::MAX);
+        free_level1(ptr);
+    }
+
+    #[test]
+    fn test_deeply_nested_all_levels() {
+        let v1 = b"1";
+        let v2 = b"2";
+        let v3 = b"3";
+        let v4 = b"4";
+        let v5 = b"5";
+        let v6 = b"6";
+        let v7 = b"7";
+        let v8 = b"8";
+        let v9 = b"9";
+        let v10 = b"10";
+
+        let ptr = create_deeply_nested(
+            v1.as_ptr(), v1.len(),
+            v2.as_ptr(), v2.len(),
+            v3.as_ptr(), v3.len(),
+            v4.as_ptr(), v4.len(),
+            v5.as_ptr(), v5.len(),
+            v6.as_ptr(), v6.len(),
+            v7.as_ptr(), v7.len(),
+            v8.as_ptr(), v8.len(),
+            v9.as_ptr(), v9.len(),
+            v10.as_ptr(), v10.len(),
+            999,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.value), "1");
+        assert_eq!(bytes_to_string(&msg.nested.value), "2");
+        assert_eq!(bytes_to_string(&msg.nested.nested.value), "3");
+        assert_eq!(bytes_to_string(&msg.nested.nested.nested.value), "4");
+        assert_eq!(bytes_to_string(&msg.nested.nested.nested.nested.value), "5");
+        free_level1(ptr);
+    }
+
+    #[test]
+    fn test_many_fields_sum() {
+        let fields: Vec<i32> = (1..=55).collect();
+        let ptr = create_many_fields(fields.as_ptr());
+        assert!(!ptr.is_null());
+        let sum = sum_many_fields(ptr);
+        assert_eq!(sum, (1..=55).sum::<i32>() as i64);
+        free_many_fields(ptr);
+    }
+
+    #[test]
+    fn test_many_fields_zero() {
+        let fields = vec![0i32; 55];
+        let ptr = create_many_fields(fields.as_ptr());
+        assert!(!ptr.is_null());
+        let sum = sum_many_fields(ptr);
+        assert_eq!(sum, 0);
+        free_many_fields(ptr);
+    }
+
+    #[test]
+    fn test_many_fields_negative() {
+        let fields: Vec<i32> = vec![-1; 55];
+        let ptr = create_many_fields(fields.as_ptr());
+        assert!(!ptr.is_null());
+        let sum = sum_many_fields(ptr);
+        assert_eq!(sum, -55);
+        free_many_fields(ptr);
+    }
+
+    #[test]
+    fn test_boolean_all_true() {
+        let ptr = create_boolean_only(true, true, true, true, true, true, true, true);
+        assert!(!ptr.is_null());
+        let count = count_true_flags(ptr);
+        assert_eq!(count, 8);
+        free_boolean_only(ptr);
+    }
+
+    #[test]
+    fn test_boolean_all_false() {
+        let ptr = create_boolean_only(false, false, false, false, false, false, false, false);
+        assert!(!ptr.is_null());
+        let count = count_true_flags(ptr);
+        assert_eq!(count, 0);
+        free_boolean_only(ptr);
+    }
+
+    #[test]
+    fn test_boolean_mixed() {
+        let ptr = create_boolean_only(true, false, true, false, true, false, true, false);
+        assert!(!ptr.is_null());
+        let count = count_true_flags(ptr);
+        assert_eq!(count, 4);
+        free_boolean_only(ptr);
+    }
+
+    #[test]
+    fn test_enum_only_creation() {
+        let ptr = create_enum_only(0, 1, 2, 3, 4, 100, 200, 300);
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(msg.e1, 0);
+        assert_eq!(msg.e2, 1);
+        assert_eq!(msg.e5, 4);
+        assert_eq!(msg.le1, 100);
+        assert_eq!(msg.le3, 300);
+        free_enum_only(ptr);
+    }
+
+    #[test]
+    fn test_empty_message_creation() {
+        let ptr = create_empty_message();
+        assert!(!ptr.is_null());
+        free_empty_message(ptr);
+    }
+
+    #[test]
+    fn test_single_field_creation() {
+        let value = b"test_value";
+        let ptr = create_single_field(value.as_ptr(), value.len());
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.value), "test_value");
+        free_single_field(ptr);
+    }
+
+    #[test]
+    fn test_single_field_empty() {
+        let ptr = create_single_field(std::ptr::null(), 0);
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        assert_eq!(bytes_to_string(&msg.value), "");
+        free_single_field(ptr);
+    }
+
+    #[test]
+    fn test_null_pointer_handling() {
+        assert_eq!(get_deeply_nested_value(std::ptr::null()), -1);
+        assert_eq!(sum_many_fields(std::ptr::null()), 0);
+        assert_eq!(count_true_flags(std::ptr::null()), 0);
+        assert!(create_many_fields(std::ptr::null()).is_null());
+    }
+
+    #[test]
+    fn test_concurrent_integer_limits() {
+        use std::thread;
+        use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
+
+        let created = Arc::new(AtomicU32::new(0));
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                let created = Arc::clone(&created);
+                thread::spawn(move || {
+                    for _ in 0..10 {
+                        let ptr = create_integer_limits(
+                            i as i32, i as i32, i as u32, i as u32,
+                            i as i64, i as i64, i as u64, i as u64,
+                            i as i32, i as i32, i as i64, i as i64,
+                            i as u32, i as u32, i as u64, i as u64,
+                            i as i32, i as i32, i as i64, i as i64,
+                        );
+                        if !ptr.is_null() {
+                            created.fetch_add(1, Ordering::Relaxed);
+                            free_integer_limits(ptr);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(created.load(Ordering::Relaxed), 80);
+    }
+
+    #[test]
+    fn test_concurrent_deeply_nested() {
+        use std::thread;
+        use std::sync::{Arc, atomic::{AtomicU32, Ordering}};
+
+        let created = Arc::new(AtomicU32::new(0));
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                let created = Arc::clone(&created);
+                thread::spawn(move || {
+                    for j in 0..10 {
+                        let ptr = create_deeply_nested(
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            std::ptr::null(), 0,
+                            (i * 10 + j) as i32,
+                        );
+                        if !ptr.is_null() {
+                            let value = get_deeply_nested_value(ptr);
+                            if value == (i * 10 + j) as i32 {
+                                created.fetch_add(1, Ordering::Relaxed);
+                            }
+                            free_level1(ptr);
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(created.load(Ordering::Relaxed), 80);
+    }
+
+    #[test]
+    fn test_concurrent_many_fields() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                thread::spawn(|| {
+                    for _ in 0..10 {
+                        let fields: Vec<i32> = (1..=55).collect();
+                        let ptr = create_many_fields(fields.as_ptr());
+                        let sum = sum_many_fields(ptr);
+                        assert_eq!(sum, 1540);
+                        free_many_fields(ptr);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_concurrent_mixed_operations() {
+        use std::thread;
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                thread::spawn(move || {
+                    let int_ptr = create_integer_limits(
+                        i, i, i as u32, i as u32,
+                        i as i64, i as i64, i as u64, i as u64,
+                        i, i, i as i64, i as i64,
+                        i as u32, i as u32, i as u64, i as u64,
+                        i, i, i as i64, i as i64,
+                    );
+
+                    let bool_ptr = create_boolean_only(true, false, true, false, true, false, true, false);
+
+                    let empty_ptr = create_empty_message();
+
+                    let fields: Vec<i32> = vec![i; 55];
+                    let many_ptr = create_many_fields(fields.as_ptr());
+
+                    free_integer_limits(int_ptr);
+                    free_boolean_only(bool_ptr);
+                    free_empty_message(empty_ptr);
+                    free_many_fields(many_ptr);
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_string_truncation() {
+        let long_string = "a".repeat(500);
+        let ptr = create_string_sizes(
+            long_string.as_ptr(), long_string.len(),
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+            std::ptr::null(), 0,
+        );
+        assert!(!ptr.is_null());
+        let msg = unsafe { &*ptr };
+        let result = bytes_to_string(&msg.empty);
+        assert_eq!(result.len(), 256);
+        free_string_sizes(ptr);
+    }
+}
