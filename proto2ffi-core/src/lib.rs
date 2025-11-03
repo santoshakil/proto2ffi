@@ -37,6 +37,7 @@ pub mod parallel;
 pub mod config;
 pub mod arena;
 pub mod serde;
+pub mod optimize;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -50,6 +51,7 @@ pub use parallel::{parallel_map, parallel_for_each, parallel_reduce, parallel_fi
 pub use config::{GeneratorConfig, RustConfig, DartConfig, CConfig, PoolConfig, SimdConfig, Visibility};
 pub use arena::{Arena, ArenaBox, ArenaVec};
 pub use serde::{ProtoSerialize, ProtoDeserialize, WireType, write_varint, read_varint, write_tag, read_tag};
+pub use optimize::{Optimizer, OptimizationConfig, UsedFieldsAnalysis, calculate_padding_waste, calculate_packing_efficiency};
 
 use std::path::Path;
 
