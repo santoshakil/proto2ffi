@@ -394,3 +394,57 @@ pub fn optimize_for_cache(mut layout: Layout) -> Result<Layout> {
     }
     Ok(layout)
 }
+
+pub fn optimize_for_size(mut layout: Layout) -> Result<Layout> {
+    for message in &mut layout.messages {
+        message.fields.sort_by(|a, b| {
+            b.size.cmp(&a.size)
+                .then_with(|| b.alignment.cmp(&a.alignment))
+                .then_with(|| a.name.cmp(&b.name))
+        });
+    }
+    Ok(layout)
+}
+
+pub fn analyze_layout_efficiency(layout: &Layout) -> LayoutAnalysis {
+    let mut total_padding = 0;
+    let mut total_size = 0;
+    let mut inefficient_messages = Vec::new();
+
+    for message in &layout.messages {
+        let padding = message.padding_bytes();
+        total_padding += padding;
+        total_size += message.size;
+
+        let efficiency = if message.size > 0 {
+            ((message.size - padding) as f64 / message.size as f64) * 100.0
+        } else {
+            100.0
+        };
+
+        if efficiency < 75.0 {
+            inefficient_messages.push((message.name.clone(), efficiency, padding));
+        }
+    }
+
+    let overall_efficiency = if total_size > 0 {
+        ((total_size - total_padding) as f64 / total_size as f64) * 100.0
+    } else {
+        100.0
+    };
+
+    LayoutAnalysis {
+        total_size,
+        total_padding,
+        overall_efficiency,
+        inefficient_messages,
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LayoutAnalysis {
+    pub total_size: usize,
+    pub total_padding: usize,
+    pub overall_efficiency: f64,
+    pub inefficient_messages: Vec<(String, f64, usize)>,
+}
