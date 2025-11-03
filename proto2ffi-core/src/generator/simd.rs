@@ -13,6 +13,8 @@ pub fn generate_simd_operations(message: &MessageLayout) -> Option<TokenStream> 
     let min_max_operations = generate_min_max_operations(message, &name);
     let multiply_operations = generate_multiply_operations(message, &name);
     let average_operations = generate_average_operations(message, &name);
+    let count_operations = generate_count_operations(message, &name);
+    let dot_product_operations = generate_dot_product_operations(message, &name);
 
     Some(quote! {
         #[cfg(target_arch = "x86_64")]
@@ -24,6 +26,8 @@ pub fn generate_simd_operations(message: &MessageLayout) -> Option<TokenStream> 
             #min_max_operations
             #multiply_operations
             #average_operations
+            #count_operations
+            #dot_product_operations
         }
     })
 }
@@ -270,6 +274,116 @@ fn generate_average_operations(message: &MessageLayout, name: &proc_macro2::Iden
                     }
                 });
             }
+        }
+    }
+
+    quote! {
+        #(#ops)*
+    }
+}
+fn generate_count_operations(message: &MessageLayout, name: &proc_macro2::Ident) -> TokenStream {
+    let mut ops = Vec::new();
+
+    for field in &message.fields {
+        if is_summable_type(field) && !field.repeated && field.size == 4 {
+            let field_name = format_ident!("{}", field.name);
+            let fn_name = format_ident!("count_{}_gt", field.name);
+
+            ops.push(quote! {
+                #[target_feature(enable = "avx2")]
+                pub unsafe fn #fn_name(items: &[#name], threshold: i32) -> usize {
+                    let threshold_vec = _mm256_set1_epi32(threshold);
+                    let mut count = 0usize;
+
+                    for chunk in items.chunks_exact(8) {
+                        let values = _mm256_set_epi32(
+                            chunk[7].#field_name as i32,
+                            chunk[6].#field_name as i32,
+                            chunk[5].#field_name as i32,
+                            chunk[4].#field_name as i32,
+                            chunk[3].#field_name as i32,
+                            chunk[2].#field_name as i32,
+                            chunk[1].#field_name as i32,
+                            chunk[0].#field_name as i32,
+                        );
+                        let cmp = _mm256_cmpgt_epi32(values, threshold_vec);
+                        let mask = _mm256_movemask_epi8(cmp);
+                        count += mask.count_ones() as usize / 4;
+                    }
+
+                    let remainder = &items[items.len() & !7..];
+                    for item in remainder {
+                        if item.#field_name as i32 > threshold {
+                            count += 1;
+                        }
+                    }
+
+                    count
+                }
+            });
+        }
+    }
+
+    quote! {
+        #(#ops)*
+    }
+}
+
+fn generate_dot_product_operations(message: &MessageLayout, name: &proc_macro2::Ident) -> TokenStream {
+    let mut ops = Vec::new();
+
+    for field in &message.fields {
+        if is_summable_type(field) && !field.repeated && field.size == 4 {
+            let field_name = format_ident!("{}", field.name);
+            let fn_name = format_ident!("dot_product_{}", field.name);
+
+            ops.push(quote! {
+                #[target_feature(enable = "avx2")]
+                pub unsafe fn #fn_name(items_a: &[#name], items_b: &[#name]) -> i64 {
+                    let len = items_a.len().min(items_b.len());
+                    let mut total = _mm256_setzero_si256();
+
+                    let chunks = len / 8;
+                    for i in 0..chunks {
+                        let base = i * 8;
+                        let values_a = _mm256_set_epi32(
+                            items_a[base + 7].#field_name as i32,
+                            items_a[base + 6].#field_name as i32,
+                            items_a[base + 5].#field_name as i32,
+                            items_a[base + 4].#field_name as i32,
+                            items_a[base + 3].#field_name as i32,
+                            items_a[base + 2].#field_name as i32,
+                            items_a[base + 1].#field_name as i32,
+                            items_a[base + 0].#field_name as i32,
+                        );
+                        let values_b = _mm256_set_epi32(
+                            items_b[base + 7].#field_name as i32,
+                            items_b[base + 6].#field_name as i32,
+                            items_b[base + 5].#field_name as i32,
+                            items_b[base + 4].#field_name as i32,
+                            items_b[base + 3].#field_name as i32,
+                            items_b[base + 2].#field_name as i32,
+                            items_b[base + 1].#field_name as i32,
+                            items_b[base + 0].#field_name as i32,
+                        );
+                        let product = _mm256_mullo_epi32(values_a, values_b);
+                        total = _mm256_add_epi32(total, product);
+                    }
+
+                    let mut sum = 0i64;
+                    let result: [i32; 8] = std::mem::transmute(total);
+                    for val in &result {
+                        sum += *val as i64;
+                    }
+
+                    let remainder_start = chunks * 8;
+                    for i in remainder_start..len {
+                        sum += (items_a[i].#field_name as i64) * (items_b[i].#field_name as i64);
+                    }
+
+                    sum
+                }
+            });
         }
     }
 

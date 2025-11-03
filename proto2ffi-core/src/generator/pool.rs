@@ -96,6 +96,48 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
                     Err(_) => 0,
                 }
             }
+
+            pub fn reset(&self) {
+                let mut inner = match self.inner.write() {
+                    Ok(guard) => guard,
+                    Err(_) => return,
+                };
+
+                const CHUNK_SIZE: usize = 100;
+                inner.free_list.clear();
+                inner.freed_set.clear();
+
+                for chunk in &inner.chunks {
+                    let ptr = chunk.as_ptr() as *mut #name;
+                    for i in 0..CHUNK_SIZE {
+                        unsafe {
+                            let item_ptr = ptr.add(i);
+                            inner.free_list.push(item_ptr);
+                            inner.freed_set.insert(item_ptr);
+                        }
+                    }
+                }
+
+                self.allocated.store(0, std::sync::atomic::Ordering::Relaxed);
+            }
+
+            pub fn fragmentation_ratio(&self) -> f64 {
+                match self.inner.read() {
+                    Ok(inner) => {
+                        let capacity = inner.chunks.len() * 100;
+                        let free = inner.free_list.len();
+                        if capacity == 0 {
+                            return 0.0;
+                        }
+                        let allocated = capacity - free;
+                        if allocated == 0 {
+                            return 0.0;
+                        }
+                        (capacity - allocated - free) as f64 / capacity as f64
+                    }
+                    Err(_) => 0.0,
+                }
+            }
         }
 
         impl #pool_inner_name {
