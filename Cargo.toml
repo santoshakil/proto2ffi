@@ -3,21 +3,6 @@ resolver = "2"
 members = [
     "proto2ffi-core",
     "proto2ffi-cli",
-    "examples/01_basic/rust",
-    "examples/02_flutter_plugin/rust",
-    "examples/03_benchmarks",
-    "examples/04_image_processing/rust",
-    "examples/05_database_engine/rust",
-    "examples/06_edge_cases/rust",
-    "examples/07_concurrent_pools/rust",
-    "examples/08_simd_operations/rust",
-    "examples/09_stress_tests/rust",
-    "examples/10_real_world_scenarios/01_video_streaming/rust",
-    "examples/10_real_world_scenarios/02_game_engine/rust",
-    "examples/10_real_world_scenarios/03_trading_system/rust",
-    "examples/10_real_world_scenarios/04_iot_aggregation/rust",
-    "examples/10_real_world_scenarios/05_ml_pipeline/rust",
-    "examples/12_flutter_app/rust",
 ]
 
 [workspace.package]
