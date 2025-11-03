@@ -31,6 +31,7 @@ pub mod generator;
 pub mod validator;
 pub mod benchmark;
 pub mod utils;
+pub mod stats;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -38,6 +39,7 @@ pub use parser::{parse_proto_file, parse_proto_string};
 pub use layout::{Layout, MessageLayout, FieldLayout, EnumLayout, calculate_layout};
 pub use validator::{validate_proto_file, ValidationReport};
 pub use benchmark::{Benchmark, BenchmarkResult};
+pub use stats::{ProtoStats, LayoutStats, MessageAnalysis, analyze_message};
 
 use std::path::Path;
 
