@@ -2,182 +2,456 @@
 
 Thank you for your interest in contributing to Proto2FFI! This document provides guidelines and instructions for contributing.
 
-## 🚀 Getting Started
+## Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Workflow](#development-workflow)
+- [Project Structure](#project-structure)
+- [Coding Standards](#coding-standards)
+- [Testing](#testing)
+- [Submitting Changes](#submitting-changes)
+
+## Code of Conduct
+
+We are committed to providing a welcoming and inclusive environment. Please:
+
+- Be respectful and professional
+- Be open to constructive feedback
+- Focus on what is best for the community
+- Show empathy towards other community members
+
+## Getting Started
 
 ### Prerequisites
 
 - Rust 1.70 or later
-- Dart/Flutter SDK 3.0 or later
+- Dart SDK 3.0 or later
+- protoc (Protocol Buffer compiler)
 - Git
 
-### Setting Up Development Environment
+### Fork and Clone
 
-1. **Clone the repository**:
+1. Fork the repository on GitHub
+2. Clone your fork:
+
 ```bash
-git clone https://github.com/yourusername/proto2ffi
+git clone https://github.com/YOUR_USERNAME/proto2ffi.git
 cd proto2ffi
 ```
 
-2. **Build the project**:
+3. Add upstream remote:
+
+```bash
+git remote add upstream https://github.com/santoshakil/proto2ffi.git
+```
+
+### Build the Project
+
 ```bash
 cargo build
-```
-
-3. **Run tests**:
-```bash
-# Rust tests
 cargo test
-
-# Example Flutter plugin tests
-cd examples/flutter_plugin
-flutter pub get
-dart test
 ```
 
-## 📝 Code Style
+### Run Examples
 
-### Rust
+```bash
+cd examples/hello_world/rust_service
+cargo build --release
 
-- Follow the [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
-- Use `cargo fmt` before committing
-- Run `cargo clippy` and fix all warnings
-- Add documentation comments for public APIs
+cd ../dart_client
+dart pub get
+dart run lib/main.dart
+```
 
-### Dart
+## Development Workflow
 
-- Follow the [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style)
-- Use `dart format` before committing
-- Run `dart analyze` and fix all issues
-- Add documentation comments for public APIs
+### 1. Create a Branch
 
-## 🔧 Development Workflow
-
-1. **Create a feature branch**:
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
-2. **Make your changes** following the code style guidelines
+Branch naming conventions:
+- `feature/` - New features
+- `fix/` - Bug fixes
+- `docs/` - Documentation changes
+- `refactor/` - Code refactoring
+- `test/` - Test improvements
 
-3. **Write tests** for your changes
+### 2. Make Changes
 
-4. **Ensure all tests pass**:
+Follow the [Coding Standards](#coding-standards) below.
+
+### 3. Test Your Changes
+
 ```bash
 cargo test
-cd examples/flutter_plugin && dart test
+cargo clippy
+cargo fmt --check
 ```
 
-5. **Commit your changes**:
+### 4. Commit Your Changes
+
+Write clear, concise commit messages:
+
 ```bash
 git add .
-git commit -m "feat: add your feature description"
+git commit -m "feat: add streaming RPC support"
 ```
 
-Use conventional commits:
-- `feat:` for new features
-- `fix:` for bug fixes
-- `docs:` for documentation changes
-- `test:` for test additions/changes
-- `refactor:` for code refactoring
-- `perf:` for performance improvements
+Commit message format:
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Test improvements
+- `chore:` - Maintenance tasks
 
-6. **Push and create a pull request**:
+### 5. Keep Your Branch Updated
+
+```bash
+git fetch upstream
+git rebase upstream/main
+```
+
+### 6. Push and Create PR
+
 ```bash
 git push origin feature/your-feature-name
 ```
 
-## 🧪 Testing Guidelines
+Then create a Pull Request on GitHub.
+
+## Project Structure
+
+```
+proto2ffi/
+├── proto2ffi-core/           # Core library
+│   ├── src/
+│   │   ├── parser/           # Proto file parsing
+│   │   ├── model/            # Data models (Service, Method, Message)
+│   │   └── generator/        # Code generation
+│   │       ├── rust/         # Rust FFI generator
+│   │       └── dart/         # Dart client generator
+│   └── Cargo.toml
+├── proto2ffi-cli/            # CLI tool
+│   ├── src/
+│   │   └── main.rs
+│   └── Cargo.toml
+├── proto2ffi-runtime/        # Runtime support
+│   ├── rust/                 # Rust runtime
+│   └── dart/                 # Dart runtime
+├── examples/                 # Example projects
+│   └── hello_world/
+├── docs/                     # Documentation
+├── research/                 # Performance analysis
+└── Cargo.toml                # Workspace config
+```
+
+## Coding Standards
+
+### Rust Code Style
+
+Follow standard Rust conventions:
+
+```rust
+// Use descriptive names
+fn generate_service_trait(service: &ProtoService) -> String { }
+
+// Document public APIs
+/// Generates Rust FFI exports for a service.
+///
+/// # Arguments
+///
+/// * `service` - The protobuf service definition
+/// * `output_dir` - Directory for generated code
+pub fn generate_ffi_exports(
+    service: &ProtoService,
+    output_dir: &Path
+) -> Result<()> { }
+
+// Use Result for error handling
+fn parse_proto(path: &Path) -> Result<ProtoFile> {
+    let parser = ProtoParser::new();
+    parser.parse_file(path)
+}
+
+// Prefer `?` over unwrap/expect
+fn process() -> Result<()> {
+    let data = read_file(path)?;
+    let parsed = parse_data(&data)?;
+    Ok(())
+}
+```
+
+### Dart Code Style
+
+Follow Dart conventions:
+
+```dart
+// Use descriptive names
+class GreeterClient {
+  final ffi.DynamicLibrary _dylib;
+
+  // Document public APIs
+  /// Calls the say_hello RPC method.
+  ///
+  /// Returns null if the call fails.
+  List<int>? say_hello(List<int> requestBytes) { }
+
+  // Use nullable types appropriately
+  User? getUser(int id) { }
+
+  // Prefer expression bodies for simple functions
+  bool isValid(int id) => id > 0;
+}
+```
+
+### Code Formatting
+
+Rust:
+```bash
+cargo fmt
+```
+
+Dart:
+```bash
+dart format .
+```
+
+### Linting
+
+Rust:
+```bash
+cargo clippy -- -D warnings
+```
+
+## Testing
 
 ### Unit Tests
 
-- Write unit tests for all new functions
-- Place tests in the same file as the code (Rust) or in `test/` (Dart)
-- Test edge cases and error conditions
+Write unit tests for all new functionality:
+
+**Rust:**
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_service_trait_generation() {
+        let service = ProtoService::new("Greeter".to_string());
+        let code = generate_service_trait(&service);
+        assert!(code.contains("pub trait Greeter"));
+    }
+}
+```
+
+**Dart:**
+
+```dart
+import 'package:test/test.dart';
+
+void main() {
+  test('client calls FFI function correctly', () {
+    // Test implementation
+  });
+}
+```
 
 ### Integration Tests
 
-- Add integration tests for end-to-end functionality
-- Test cross-language interactions
-- Include performance benchmarks for critical paths
+Add integration tests for end-to-end functionality:
 
-### Performance Tests
+```rust
+#[test]
+fn test_code_generation_roundtrip() {
+    // Parse proto
+    let proto_files = parser.parse_file("test.proto").unwrap();
 
-- Benchmark performance-critical code
-- Compare against baseline measurements
-- Document performance characteristics
+    // Generate code
+    generator::rust::generate(&proto_files, Path::new("output")).unwrap();
 
-## 📖 Documentation
+    // Verify generated files exist
+    assert!(Path::new("output/greeter.rs").exists());
+}
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test
+cargo test test_name
+
+# Run with output
+cargo test -- --nocapture
+
+# Run Dart tests
+cd dart_client
+dart test
+```
+
+## Areas for Contribution
+
+### High Priority
+
+- [ ] Streaming RPC support (client/server/bidirectional)
+- [ ] Async/await support
+- [ ] Better error type generation
+- [ ] Middleware/interceptor support
+
+### Medium Priority
+
+- [ ] Code generation optimizations
+- [ ] More examples (database service, file operations, etc.)
+- [ ] Performance benchmarks for different message sizes
+- [ ] Better error messages in CLI
+
+### Low Priority
+
+- [ ] IDE plugin support
+- [ ] Web assembly support
+- [ ] Custom derive macros
+- [ ] Proto3 optional field support
+
+## Submitting Changes
+
+### Pull Request Process
+
+1. **Update Documentation**: Update relevant documentation for your changes
+
+2. **Add Tests**: Ensure your changes are covered by tests
+
+3. **Update Changelog**: Add entry to CHANGELOG.md (if exists)
+
+4. **Create PR**: Create a pull request with:
+   - Clear title describing the change
+   - Detailed description of what and why
+   - Link to related issues
+   - Screenshots/examples if applicable
+
+5. **Code Review**: Address review feedback promptly
+
+6. **CI Checks**: Ensure all CI checks pass
+
+### PR Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+Describe testing done
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] All tests passing
+- [ ] Clippy passes without warnings
+- [ ] Code formatted with rustfmt/dart format
+```
+
+## Code Review Guidelines
+
+When reviewing PRs:
+
+- Be constructive and respectful
+- Focus on code quality and design
+- Suggest improvements, don't demand
+- Test the changes locally if possible
+- Approve only when satisfied
+
+## Documentation
 
 ### Code Documentation
 
-- Document all public APIs with doc comments
-- Include examples in doc comments
-- Explain complex algorithms and design decisions
+Document all public APIs:
+
+```rust
+/// Generates FFI bindings from protobuf service definitions.
+///
+/// # Arguments
+///
+/// * `proto_files` - Parsed proto files
+/// * `output_dir` - Output directory for generated code
+///
+/// # Errors
+///
+/// Returns `Error::Io` if file operations fail.
+///
+/// # Example
+///
+/// ```
+/// use proto2ffi_core::{ProtoParser, generator};
+/// use std::path::Path;
+///
+/// let parser = ProtoParser::new();
+/// let proto_files = parser.parse_file(Path::new("service.proto"))?;
+/// generator::rust::generate(&proto_files, Path::new("output"))?;
+/// ```
+pub fn generate(proto_files: &[ProtoFile], output_dir: &Path) -> Result<()> {
+    // Implementation
+}
+```
 
 ### User Documentation
 
-- Update README.md for user-facing changes
-- Add examples to `examples/` directory
-- Update architecture docs in `docs/`
+Update relevant documentation:
+- README.md - Overview and quick start
+- docs/GETTING_STARTED.md - Tutorial
+- docs/API.md - API reference
+- docs/PERFORMANCE.md - Performance guide
+- docs/PRODUCTION_GUIDE.md - Production deployment
 
-## 🐛 Bug Reports
+## Performance Considerations
 
-When filing a bug report, please include:
+When contributing, consider:
 
-1. **Description**: Clear description of the bug
-2. **Reproduction**: Minimal code to reproduce the issue
-3. **Expected behavior**: What you expected to happen
-4. **Actual behavior**: What actually happened
-5. **Environment**: OS, Rust version, Dart version
-6. **Logs**: Relevant error messages or logs
+- Minimize allocations in hot paths
+- Use appropriate data structures
+- Profile before optimizing
+- Document performance characteristics
+- Add benchmarks for critical paths
 
-## ✨ Feature Requests
+Example benchmark:
 
-For feature requests, please include:
+```rust
+#[bench]
+fn bench_code_generation(b: &mut Bencher) {
+    let service = create_test_service();
+    b.iter(|| {
+        black_box(generate_service_trait(&service))
+    });
+}
+```
 
-1. **Use case**: Why is this feature needed?
-2. **Proposed solution**: How would you implement it?
-3. **Alternatives**: Other solutions you've considered
-4. **Examples**: Code examples of how it would be used
+## Questions or Issues?
 
-## 🔍 Code Review Process
+- Open an issue for bugs or feature requests
+- Start a discussion for questions or ideas
+- Join our community chat (if available)
 
-1. All changes require review before merging
-2. Address reviewer feedback promptly
-3. Keep PRs focused and reasonably sized
-4. Ensure CI passes before requesting review
+## License
 
-## 📋 Checklist Before Submitting PR
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
-- [ ] Code follows project style guidelines
-- [ ] All tests pass (`cargo test` and `dart test`)
-- [ ] New tests added for new functionality
-- [ ] Documentation updated
-- [ ] Commit messages follow conventional commits
-- [ ] No `println!` or debug code left in
-- [ ] Performance impact considered and documented
-- [ ] Breaking changes clearly marked
+## Recognition
 
-## 🎯 Priority Areas
+Contributors will be recognized in:
+- CONTRIBUTORS.md file
+- Release notes
+- Project README
 
-We especially welcome contributions in these areas:
-
-- **Platform support**: Windows, Android, iOS optimizations
-- **Performance**: SIMD, memory optimization, benchmarks
-- **Documentation**: Tutorials, guides, examples
-- **Testing**: More test coverage, edge cases
-- **Tooling**: IDE plugins, build tools integration
-
-## 💡 Questions?
-
-- Open a [Discussion](https://github.com/yourusername/proto2ffi/discussions)
-- Join our community chat
-- Email: your.email@example.com
-
-## 📜 Code of Conduct
-
-This project follows the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct). By participating, you agree to uphold this code.
-
----
-
-Thank you for contributing to Proto2FFI! 🎉
+Thank you for contributing to Proto2FFI!

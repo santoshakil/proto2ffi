@@ -1,0 +1,28 @@
+import 'dart:ffi' as ffi;
+import 'dart:typed_data';
+
+/// ByteBuffer FFI struct for passing protobuf bytes across FFI boundary
+final class ByteBuffer extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> ptr;
+
+  @ffi.Size()
+  external int len;
+
+  @ffi.Size()
+  external int cap;
+
+  /// Convert ByteBuffer to Dart Uint8List
+  Uint8List toUint8List() {
+    if (ptr == ffi.nullptr || len == 0) {
+      return Uint8List(0);
+    }
+    return ptr.asTypedList(len);
+  }
+
+  /// Check if buffer is null
+  bool get isNull => ptr == ffi.nullptr;
+}
+
+/// Free a ByteBuffer returned from Rust
+typedef FreeByteBufferNative = ffi.Void Function(ByteBuffer);
+typedef FreeByteBufferDart = void Function(ByteBuffer);

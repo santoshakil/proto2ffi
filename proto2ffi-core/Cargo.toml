@@ -7,22 +7,27 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-description = "Core library for proto2ffi - Zero-copy FFI code generation from Protocol Buffers"
-keywords = ["ffi", "protobuf", "codegen", "dart", "flutter"]
-categories = ["development-tools", "parser-implementations"]
+rust-version.workspace = true
+description = "Core library for proto2ffi: protobuf-to-FFI code generator"
+keywords = ["protobuf", "ffi", "dart", "rust", "codegen"]
+categories = ["development-tools", "parsing"]
 
 [dependencies]
-pest.workspace = true
-pest_derive.workspace = true
-quote.workspace = true
-proc-macro2.workspace = true
-syn.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+# Proto parsing
+protobuf.workspace = true
+protobuf-parse.workspace = true
+
+# Code generation
+heck.workspace = true
+
+# Error handling
 anyhow.workspace = true
 thiserror.workspace = true
-sha2 = "0.10"
-num_cpus = "1.16"
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
-tempfile = "3.0"
+assert_cmd.workspace = true
+predicates.workspace = true

@@ -1,0 +1,16 @@
+name: proto2ffi_runtime
+description: Runtime support library for proto2ffi generated Dart code
+version: 0.2.0
+homepage: https://github.com/santoshakil/proto2ffi
+repository: https://github.com/santoshakil/proto2ffi
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  ffi: ^2.1.0
+  protobuf: ^3.1.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

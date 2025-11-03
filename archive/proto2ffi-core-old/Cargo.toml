@@ -1,0 +1,28 @@
+[package]
+name = "proto2ffi-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Core library for proto2ffi - Zero-copy FFI code generation from Protocol Buffers"
+keywords = ["ffi", "protobuf", "codegen", "dart", "flutter"]
+categories = ["development-tools", "parser-implementations"]
+
+[dependencies]
+pest.workspace = true
+pest_derive.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+syn.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+sha2 = "0.10"
+num_cpus = "1.16"
+
+[dev-dependencies]
+tempfile = "3.0"

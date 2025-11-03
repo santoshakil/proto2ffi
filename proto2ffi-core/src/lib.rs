@@ -1,129 +1,41 @@
-//! # proto2ffi-core
-//!
-//! Core library for generating zero-copy FFI bindings from Protocol Buffer definitions.
-//!
-//! This library provides:
-//! - Protocol Buffer schema parsing
-//! - Memory layout calculation with proper alignment
-//! - Code generation for Rust (#[repr(C)] structs)
-//! - Code generation for Dart (dart:ffi bindings)
-//! - Memory pool generation for high-performance allocation
-//! - SIMD batch operations generation
-//!
-//! ## Example
-//!
-//! ```rust,no_run
-//! use proto2ffi_core::{parse_proto_file, calculate_layout, generate_all};
-//! use std::path::Path;
-//!
-//! let proto_file = Path::new("schema.proto");
-//! let proto = parse_proto_file(proto_file)?;
-//! let layout = calculate_layout(&proto, 8)?;
-//! generate_all(&layout, Path::new("output/rust"), Path::new("output/dart"))?;
-//! # Ok::<(), Box<dyn std::error::Error>>(())
-//! ```
-
 pub mod error;
-pub mod types;
+pub mod model;
 pub mod parser;
-pub mod layout;
 pub mod generator;
-pub mod validator;
-pub mod benchmark;
-pub mod utils;
-pub mod stats;
-pub mod cache;
-pub mod parallel;
-pub mod config;
-pub mod arena;
-pub mod serde;
-pub mod optimize;
-pub mod diff;
-pub mod doc;
-pub mod codegen_cache;
-pub mod batch;
 
-pub use error::{Proto2FFIError, Result};
-pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
-pub use parser::{parse_proto_file, parse_proto_string};
-pub use layout::{Layout, MessageLayout, FieldLayout, EnumLayout, calculate_layout};
-pub use validator::{validate_proto_file, ValidationReport};
-pub use benchmark::{Benchmark, BenchmarkResult};
-pub use stats::{ProtoStats, LayoutStats, MessageAnalysis, analyze_message};
-pub use cache::{Cache, LruCache, CacheStats};
-pub use parallel::{parallel_map, parallel_for_each, parallel_reduce, parallel_filter, parallel_work, WorkQueue};
-pub use config::{GeneratorConfig, RustConfig, DartConfig, CConfig, PoolConfig, SimdConfig, Visibility};
-pub use arena::{Arena, ArenaBox, ArenaVec};
-pub use serde::{ProtoSerialize, ProtoDeserialize, WireType, write_varint, read_varint, write_tag, read_tag};
-pub use optimize::{Optimizer, OptimizationConfig, UsedFieldsAnalysis, calculate_padding_waste, calculate_packing_efficiency};
-pub use diff::{ProtoDiff, Change, ChangeKind, ChangeCategory, DiffSummary, diff_protos, diff_layouts};
-pub use doc::{DocGenerator, DocFormat};
-pub use codegen_cache::{CodegenCache, hash_file, hash_layout, hash_string};
-pub use batch::{BatchGenerator, BatchConfig, BatchResult, find_proto_files};
+pub use error::{Error, Result};
+pub use model::{ProtoFile, ProtoService, ServiceMethod, MessageType, Field, FieldType};
 
-use std::path::Path;
-
-/// Generate all code (Rust + Dart) from a layout
-pub fn generate_all(
-    layout: &Layout,
-    rust_output: &Path,
-    dart_output: &Path,
-) -> Result<()> {
-    use std::fs;
-
-    // Create output directories
-    fs::create_dir_all(rust_output)?;
-    fs::create_dir_all(dart_output)?;
-
-    // Rust generation - 4 layers
-    generator::rust::generate_rust(layout, rust_output)?;  // Generates ffi.rs
-    generator::generate_rust_proto_models(layout, &rust_output.join("proto.rs"))?;
-    generator::generate_rust_conversions(layout, &rust_output.join("conversion.rs"))?;
-    generator::generate_rust_wrappers(layout, &rust_output.join("wrapper.rs"))?;
-    generator::generate_c_header(layout, rust_output)?;
-
-    // Generate Rust mod.rs to export public API
-    let mod_content = r#"//! Generated FFI bindings from Protocol Buffers
-//!
-//! Users interact with proto models - FFI is transparent
-
-pub mod ffi;
-pub mod proto;
-mod conversion;
-pub mod wrapper;
-
-pub use proto::*;
-pub use wrapper::*;
-"#;
-    fs::write(rust_output.join("mod.rs"), mod_content)?;
-
-    // Dart generation - 4 layers
-    generator::dart::generate_dart(layout, dart_output)?;  // Generates ffi.dart
-    generator::generate_dart_proto_models(layout, &dart_output.join("proto.dart"))?;
-    generator::generate_dart_conversions(layout, &dart_output.join("conversion.dart"))?;
-    generator::generate_dart_wrappers(layout, &dart_output.join("wrapper.dart"))?;
-
-    Ok(())
+pub struct Proto2Ffi {
+    proto_files: Vec<ProtoFile>,
 }
 
-/// Generate only Rust code
-pub fn generate_rust_only(layout: &Layout, output: &Path) -> Result<()> {
-    generator::rust::generate_rust(layout, output)
+impl Proto2Ffi {
+    pub fn new() -> Self {
+        Self {
+            proto_files: Vec::new(),
+        }
+    }
+
+    pub fn add_proto_file(&mut self, proto_file: ProtoFile) {
+        self.proto_files.push(proto_file);
+    }
+
+    pub fn proto_files(&self) -> &[ProtoFile] {
+        &self.proto_files
+    }
+
+    pub fn generate_rust(&self, output_dir: &std::path::Path) -> Result<()> {
+        generator::rust::generate(&self.proto_files, output_dir)
+    }
+
+    pub fn generate_dart(&self, output_dir: &std::path::Path) -> Result<()> {
+        generator::dart::generate(&self.proto_files, output_dir)
+    }
 }
 
-/// Generate only Dart code
-pub fn generate_dart_only(layout: &Layout, output: &Path) -> Result<()> {
-    generator::dart::generate_dart(layout, output)
-}
-
-/// Complete code generation pipeline from proto file
-pub fn generate_from_proto(
-    proto_path: &Path,
-    rust_output: &Path,
-    dart_output: &Path,
-) -> Result<()> {
-    let proto = parse_proto_file(proto_path)?;
-    let layout = calculate_layout(&proto, 8)?;
-    generate_all(&layout, rust_output, dart_output)?;
-    Ok(())
+impl Default for Proto2Ffi {
+    fn default() -> Self {
+        Self::new()
+    }
 }

@@ -1,0 +1,21 @@
+[package]
+name = "proto2ffi-runtime"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+rust-version.workspace = true
+description = "Runtime support library for proto2ffi generated Rust code"
+keywords = ["protobuf", "ffi", "runtime"]
+categories = ["development-tools", "api-bindings"]
+
+[dependencies]
+prost.workspace = true
+thiserror.workspace = true
+
+[lib]
+name = "proto2ffi_runtime"
+path = "src/lib.rs"
