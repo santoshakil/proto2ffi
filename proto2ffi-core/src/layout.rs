@@ -10,6 +10,28 @@ pub struct Layout {
     pub alignment: usize,
 }
 
+impl Layout {
+    pub fn find_message(&self, name: &str) -> Option<&MessageLayout> {
+        self.messages.iter().find(|m| m.name == name)
+    }
+
+    pub fn find_enum(&self, name: &str) -> Option<&EnumLayout> {
+        self.enums.iter().find(|e| e.name == name)
+    }
+
+    pub fn total_size(&self) -> usize {
+        self.messages.iter().map(|m| m.size).sum()
+    }
+
+    pub fn message_count(&self) -> usize {
+        self.messages.len()
+    }
+
+    pub fn enum_count(&self) -> usize {
+        self.enums.len()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageLayout {
     pub name: String,
@@ -17,6 +39,29 @@ pub struct MessageLayout {
     pub alignment: usize,
     pub fields: Vec<FieldLayout>,
     pub options: HashMap<String, String>,
+}
+
+impl MessageLayout {
+    pub fn find_field(&self, name: &str) -> Option<&FieldLayout> {
+        self.fields.iter().find(|f| f.name == name)
+    }
+
+    pub fn field_count(&self) -> usize {
+        self.fields.iter().filter(|f| !f.name.ends_with("_count")).count()
+    }
+
+    pub fn has_repeated_fields(&self) -> bool {
+        self.fields.iter().any(|f| f.repeated)
+    }
+
+    pub fn padding_bytes(&self) -> usize {
+        let field_sizes: usize = self.fields.iter().map(|f| f.size).sum();
+        self.size.saturating_sub(field_sizes)
+    }
+
+    pub fn get_option(&self, key: &str) -> Option<&String> {
+        self.options.get(key)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +82,28 @@ pub struct FieldLayout {
 pub struct EnumLayout {
     pub name: String,
     pub variants: Vec<(String, i32)>,
+}
+
+impl EnumLayout {
+    pub fn find_variant(&self, name: &str) -> Option<i32> {
+        self.variants.iter().find(|(n, _)| n == name).map(|(_, v)| *v)
+    }
+
+    pub fn find_variant_by_value(&self, value: i32) -> Option<&str> {
+        self.variants.iter().find(|(_, v)| *v == value).map(|(n, _)| n.as_str())
+    }
+
+    pub fn variant_count(&self) -> usize {
+        self.variants.len()
+    }
+
+    pub fn min_value(&self) -> Option<i32> {
+        self.variants.iter().map(|(_, v)| *v).min()
+    }
+
+    pub fn max_value(&self) -> Option<i32> {
+        self.variants.iter().map(|(_, v)| *v).max()
+    }
 }
 
 pub fn calculate_layout(proto: &ProtoFile, default_alignment: usize) -> Result<Layout> {
