@@ -40,6 +40,7 @@ pub mod serde;
 pub mod optimize;
 pub mod diff;
 pub mod doc;
+pub mod codegen_cache;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -56,6 +57,7 @@ pub use serde::{ProtoSerialize, ProtoDeserialize, WireType, write_varint, read_v
 pub use optimize::{Optimizer, OptimizationConfig, UsedFieldsAnalysis, calculate_padding_waste, calculate_packing_efficiency};
 pub use diff::{ProtoDiff, Change, ChangeKind, ChangeCategory, DiffSummary, diff_protos, diff_layouts};
 pub use doc::{DocGenerator, DocFormat};
+pub use codegen_cache::{CodegenCache, hash_file, hash_layout, hash_string};
 
 use std::path::Path;
 
