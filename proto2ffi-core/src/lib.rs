@@ -35,6 +35,7 @@ pub mod stats;
 pub mod cache;
 pub mod parallel;
 pub mod config;
+pub mod arena;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -46,6 +47,7 @@ pub use stats::{ProtoStats, LayoutStats, MessageAnalysis, analyze_message};
 pub use cache::{Cache, LruCache, CacheStats};
 pub use parallel::{parallel_map, parallel_for_each, parallel_reduce, parallel_filter, parallel_work, WorkQueue};
 pub use config::{GeneratorConfig, RustConfig, DartConfig, CConfig, PoolConfig, SimdConfig, Visibility};
+pub use arena::{Arena, ArenaBox, ArenaVec};
 
 use std::path::Path;
 
