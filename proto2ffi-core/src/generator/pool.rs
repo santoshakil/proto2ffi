@@ -138,6 +138,63 @@ pub fn generate_pool_allocator(message: &MessageLayout) -> TokenStream {
                     Err(_) => 0.0,
                 }
             }
+
+            pub fn try_allocate(&self) -> Option<*mut #name> {
+                let mut inner = self.inner.write().ok()?;
+
+                if inner.free_list.is_empty() {
+                    inner.add_chunk();
+                }
+
+                inner.free_list.pop().and_then(|ptr| {
+                    inner.freed_set.remove(&ptr);
+                    self.allocated.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    Some(ptr)
+                })
+            }
+
+            pub fn allocate_batch(&self, count: usize) -> Vec<*mut #name> {
+                let mut result = Vec::with_capacity(count);
+                let mut inner = match self.inner.write() {
+                    Ok(guard) => guard,
+                    Err(_) => return result,
+                };
+
+                for _ in 0..count {
+                    if inner.free_list.is_empty() {
+                        inner.add_chunk();
+                    }
+
+                    if let Some(ptr) = inner.free_list.pop() {
+                        inner.freed_set.remove(&ptr);
+                        self.allocated.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        result.push(ptr);
+                    } else {
+                        break;
+                    }
+                }
+
+                result
+            }
+
+            pub fn free_batch(&self, ptrs: &[*mut #name]) -> usize {
+                let mut freed = 0;
+                let mut inner = match self.inner.write() {
+                    Ok(guard) => guard,
+                    Err(_) => return freed,
+                };
+
+                for &ptr in ptrs {
+                    if !ptr.is_null() && !inner.freed_set.contains(&ptr) {
+                        inner.free_list.push(ptr);
+                        inner.freed_set.insert(ptr);
+                        self.allocated.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                        freed += 1;
+                    }
+                }
+
+                freed
+            }
         }
 
         impl #pool_inner_name {
