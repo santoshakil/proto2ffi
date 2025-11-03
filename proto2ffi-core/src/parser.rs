@@ -633,4 +633,205 @@ enum Priority {
         let proto_file = result.unwrap();
         assert_eq!(proto_file.enums[0].variants.len(), 5);
     }
+
+    #[test]
+    fn test_parse_very_long_field_name() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 this_is_a_very_long_field_name_that_exceeds_normal_length_but_should_still_be_valid = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_maximum_field_number() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 max_field = 536870911;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_multiple_imports() {
+        let proto = r#"
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
+message Test {
+    int32 id = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_special_characters_in_comments() {
+        let proto = r#"
+syntax = "proto3";
+// Comment with special chars: !@#$%^&*()_+-={}[]|:";'<>?,./
+message Test {
+    int32 id = 1; // Inline comment with <special> chars!
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_only_syntax() {
+        let proto = r#"syntax = "proto3";"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 0);
+        assert_eq!(proto_file.enums.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_whitespace_variations() {
+        let proto = r#"
+syntax="proto3";message Test{int32 id=1;}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_large_enum() {
+        let mut proto = String::from("syntax = \"proto3\";\nenum LargeEnum {\n");
+        for i in 0..100 {
+            proto.push_str(&format!("    VALUE_{} = {};\n", i, i));
+        }
+        proto.push_str("}\n");
+
+        let result = parse_proto_string(&proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.enums[0].variants.len(), 100);
+    }
+
+    #[test]
+    fn test_parse_many_messages() {
+        let mut proto = String::from("syntax = \"proto3\";\n");
+        for i in 0..50 {
+            proto.push_str(&format!("message Message{} {{ int32 id = 1; }}\n", i));
+        }
+
+        let result = parse_proto_string(&proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages.len(), 50);
+    }
+
+    #[test]
+    fn test_parse_mixed_field_types() {
+        let proto = r#"
+syntax = "proto3";
+message AllTypes {
+    int32 f1 = 1;
+    int64 f2 = 2;
+    uint32 f3 = 3;
+    uint64 f4 = 4;
+    sint32 f5 = 5;
+    sint64 f6 = 6;
+    fixed32 f7 = 7;
+    fixed64 f8 = 8;
+    sfixed32 f9 = 9;
+    sfixed64 f10 = 10;
+    float f11 = 11;
+    double f12 = 12;
+    bool f13 = 13;
+    string f14 = 14;
+    bytes f15 = 15;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages[0].fields.len(), 15);
+    }
+
+    #[test]
+    fn test_parse_multiline_comments() {
+        let proto = r#"
+syntax = "proto3";
+/*
+ * This is a multi-line comment
+ * spanning multiple lines
+ */
+message Test {
+    int32 id = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_field_number_gaps() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 field1 = 1;
+    int32 field10 = 10;
+    int32 field100 = 100;
+    int32 field1000 = 1000;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.messages[0].fields.len(), 4);
+    }
+
+    #[test]
+    fn test_parse_snake_case_fields() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 snake_case_field = 1;
+    int32 another_snake_case = 2;
+    int32 yet_another_one = 3;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_camel_case_fields() {
+        let proto = r#"
+syntax = "proto3";
+message Test {
+    int32 camelCaseField = 1;
+    int32 anotherCamelCase = 2;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_package_with_dots() {
+        let proto = r#"
+syntax = "proto3";
+package com.example.project.v1;
+message Test {
+    int32 id = 1;
+}
+"#;
+        let result = parse_proto_string(proto);
+        assert!(result.is_ok());
+        let proto_file = result.unwrap();
+        assert_eq!(proto_file.package, Some("com.example.project.v1".to_string()));
+    }
 }
