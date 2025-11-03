@@ -38,7 +38,10 @@ pub fn generate_dart(layout: &Layout, output_dir: &Path) -> Result<()> {
 fn generate_dart_enum(enum_layout: &EnumLayout) -> Result<String> {
     let mut code = String::new();
 
-    // Dart 3.0+ enum syntax
+    code.push_str(&format!("/// Proto enum: {} ({} variants)\n", enum_layout.name, enum_layout.variants.len()));
+    code.push_str("///\n");
+    code.push_str("/// Generated from proto3 enum definition.\n");
+    code.push_str("/// Each variant has an associated integer value for FFI compatibility.\n");
     code.push_str(&format!("enum {} {{\n", enum_layout.name));
 
     let variant_count = enum_layout.variants.len();
@@ -65,10 +68,21 @@ fn generate_dart_enum(enum_layout: &EnumLayout) -> Result<String> {
 fn generate_dart_class(message: &MessageLayout) -> Result<String> {
     let mut code = String::new();
 
-    // Generate size/alignment constants outside the struct
+    let field_count = message.fields.iter().filter(|f| !f.name.ends_with("_count")).count();
+
+    code.push_str(&format!("/// Size of {} in bytes\n", message.name));
     code.push_str(&format!("const int {}_SIZE = {};\n", message.name.to_uppercase(), message.size));
+    code.push_str(&format!("/// Alignment requirement of {} in bytes\n", message.name));
     code.push_str(&format!("const int {}_ALIGNMENT = {};\n\n", message.name.to_uppercase(), message.alignment));
 
+    code.push_str(&format!("/// Proto message: {}\n", message.name));
+    code.push_str("///\n");
+    code.push_str(&format!("/// Size: {} bytes\n", message.size));
+    code.push_str(&format!("/// Alignment: {} bytes\n", message.alignment));
+    code.push_str(&format!("/// Fields: {}\n", field_count));
+    code.push_str("///\n");
+    code.push_str("/// Zero-copy FFI compatible struct with C representation.\n");
+    code.push_str("/// Use [allocate] to create new instances.\n");
     code.push_str(&format!("final class {} extends ffi.Struct {{\n", message.name));
 
     let mut count_fields = Vec::new();
@@ -125,6 +139,10 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
         }
     }
 
+    code.push_str("  /// Allocates a new instance on the heap using calloc\n");
+    code.push_str("  ///\n");
+    code.push_str("  /// Returns a pointer to the allocated memory.\n");
+    code.push_str("  /// Must be freed using `calloc.free()` when done.\n");
     code.push_str(&format!(
         "  static ffi.Pointer<{}> allocate() {{\n",
         message.name
@@ -139,7 +157,10 @@ fn generate_dart_class(message: &MessageLayout) -> Result<String> {
 
 fn generate_string_getter(field_name: &str, max_len: usize) -> String {
     format!(
-        r#"  String get {}_str {{
+        r#"  /// Returns the UTF-8 string value of {}
+  ///
+  /// Reads bytes until the first null terminator (max {} bytes).
+  String get {}_str {{
     final bytes = <int>[];
     for (int i = 0; i < {}; i++) {{
       if ({}[i] == 0) break;
@@ -149,13 +170,17 @@ fn generate_string_getter(field_name: &str, max_len: usize) -> String {
   }}
 
 "#,
-        field_name, max_len, field_name, field_name
+        field_name, max_len, field_name, max_len, field_name, field_name
     )
 }
 
 fn generate_string_setter(field_name: &str, max_len: usize) -> String {
     format!(
-        r#"  set {}_str(String value) {{
+        r#"  /// Sets the UTF-8 string value of {}
+  ///
+  /// Automatically truncates at UTF-8 character boundaries if value exceeds
+  /// {} bytes. Adds null terminator.
+  set {}_str(String value) {{
     var bytes = utf8.encode(value);
     final maxBytes = {} - 1;
 
@@ -198,6 +223,8 @@ fn generate_string_setter(field_name: &str, max_len: usize) -> String {
         field_name,
         max_len,
         field_name,
+        max_len,
+        field_name,
         field_name
     )
 }
@@ -205,7 +232,11 @@ fn generate_string_setter(field_name: &str, max_len: usize) -> String {
 fn generate_array_getter(field_name: &str, dart_type: &str) -> String {
     let inner_type = dart_type.trim_start_matches("List<").trim_end_matches('>');
     format!(
-        r#"  List<{}> get {}_list {{
+        r#"  /// Returns a fixed-length list of active {} elements
+  ///
+  /// The list length is determined by the internal {}_count field.
+  /// The returned list is not growable.
+  List<{}> get {}_list {{
     return List.generate(
       {}_count,
       (i) => {}[i],
@@ -214,7 +245,7 @@ fn generate_array_getter(field_name: &str, dart_type: &str) -> String {
   }}
 
 "#,
-        inner_type, field_name, field_name, field_name
+        field_name, field_name, inner_type, field_name, field_name, field_name
     )
 }
 
@@ -230,7 +261,10 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
 
     if is_primitive {
         format!(
-            r#"  void add_{}({} item) {{
+            r#"  /// Adds an item to {}
+  ///
+  /// Throws an [Exception] if capacity ({}) is reached.
+  void add_{}({} item) {{
     if ({}_count >= {}) {{
       throw Exception('{} array full');
     }}
@@ -239,6 +273,8 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
   }}
 
 "#,
+            field_name,
+            max_count,
             singular,
             inner_type,
             field_name,
@@ -250,7 +286,11 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
         )
     } else {
         format!(
-            r#"  {} get_next_{}() {{
+            r#"  /// Returns the next available {} element and increments the count
+  ///
+  /// Throws an [Exception] if capacity ({}) is reached.
+  /// Use this to populate complex nested structures.
+  {} get_next_{}() {{
     if ({}_count >= {}) {{
       throw Exception('{} array full');
     }}
@@ -260,6 +300,8 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
   }}
 
 "#,
+            field_name,
+            max_count,
             inner_type,
             singular,
             field_name,
@@ -275,9 +317,14 @@ fn generate_array_adder(field_name: &str, dart_type: &str, max_count: usize) -> 
 fn generate_bindings(layout: &Layout) -> Result<String> {
     let mut code = String::new();
 
+    code.push_str("/// FFI bindings for generated message types\n");
+    code.push_str("///\n");
+    code.push_str("/// Provides size and alignment introspection functions.\n");
+    code.push_str("/// The dynamic library is loaded automatically based on platform.\n");
     code.push_str("class FFIBindings {\n");
     code.push_str("  static final _dylib = _loadLibrary();\n\n");
 
+    code.push_str("  /// Loads the appropriate native library for the current platform\n");
     code.push_str("  static ffi.DynamicLibrary _loadLibrary() {\n");
     code.push_str("    if (Platform.isAndroid) {\n");
     code.push_str("      return ffi.DynamicLibrary.open('libgenerated.so');\n");
