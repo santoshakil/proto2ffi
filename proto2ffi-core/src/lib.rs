@@ -32,6 +32,7 @@ pub mod validator;
 pub mod benchmark;
 pub mod utils;
 pub mod stats;
+pub mod cache;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
@@ -40,6 +41,7 @@ pub use layout::{Layout, MessageLayout, FieldLayout, EnumLayout, calculate_layou
 pub use validator::{validate_proto_file, ValidationReport};
 pub use benchmark::{Benchmark, BenchmarkResult};
 pub use stats::{ProtoStats, LayoutStats, MessageAnalysis, analyze_message};
+pub use cache::{Cache, LruCache, CacheStats};
 
 use std::path::Path;
 
