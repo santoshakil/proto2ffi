@@ -68,6 +68,9 @@ pub fn generate_rust(layout: &Layout, output_dir: &Path) -> Result<()> {
 
 fn generate_enum(enum_layout: &EnumLayout) -> Result<TokenStream> {
     let name = format_ident!("{}", enum_layout.name);
+    let enum_name_str = &enum_layout.name;
+    let variant_count = enum_layout.variants.len();
+
     let variants: Vec<_> = enum_layout.variants.iter().map(|(var_name, value)| {
         let variant = format_ident!("{}", var_name);
         let val = proc_macro2::Literal::u32_unsuffixed(*value as u32);
@@ -75,6 +78,10 @@ fn generate_enum(enum_layout: &EnumLayout) -> Result<TokenStream> {
     }).collect();
 
     Ok(quote! {
+        #[doc = concat!("Proto enum: ", #enum_name_str, " (", #variant_count, " variants)")]
+        #[doc = ""]
+        #[doc = "Generated from proto3 enum definition."]
+        #[doc = "Uses u32 representation for FFI compatibility."]
         #[repr(u32)]
         #[derive(Copy, Clone, Debug, PartialEq, Eq)]
         pub enum #name {
@@ -85,7 +92,10 @@ fn generate_enum(enum_layout: &EnumLayout) -> Result<TokenStream> {
 
 fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
     let name = format_ident!("{}", message.name);
+    let msg_name_str = &message.name;
     let alignment = proc_macro2::Literal::usize_unsuffixed(message.alignment);
+    let size = proc_macro2::Literal::usize_unsuffixed(message.size);
+    let field_count = message.fields.iter().filter(|f| !f.name.ends_with("_count")).count();
 
     let mut fields = Vec::new();
 
@@ -101,6 +111,14 @@ fn generate_message_struct(message: &MessageLayout) -> Result<TokenStream> {
     }
 
     Ok(quote! {
+        #[doc = concat!("Proto message: ", #msg_name_str)]
+        #[doc = ""]
+        #[doc = concat!("Size: ", #size, " bytes")]
+        #[doc = concat!("Alignment: ", #alignment, " bytes")]
+        #[doc = concat!("Fields: ", #field_count)]
+        #[doc = ""]
+        #[doc = "Zero-copy FFI compatible struct with C representation."]
+        #[doc = "Use `from_ptr` and `from_ptr_mut` for safe pointer conversion."]
         #[repr(C, align(#alignment))]
         #[derive(Copy, Clone, Debug)]
         pub struct #name {
@@ -136,6 +154,9 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
                 let elem_type = parse_rust_type(&element_type);
 
                 methods.push(quote! {
+                    #[doc = concat!("Returns slice of active ", stringify!(#field_name), " elements")]
+                    #[doc = ""]
+                    #[doc = "The slice length is determined by the internal count field."]
                     #[inline(always)]
                     pub fn #field_name(&self) -> &[#elem_type] {
                         &self.#field_name[..self.#count_field as usize]
@@ -144,6 +165,9 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
                 let getter_mut = format_ident!("{}_mut", field.name);
                 methods.push(quote! {
+                    #[doc = concat!("Returns mutable slice of active ", stringify!(#field_name), " elements")]
+                    #[doc = ""]
+                    #[doc = "The slice length is determined by the internal count field."]
                     #[inline(always)]
                     pub fn #getter_mut(&mut self) -> &mut [#elem_type] {
                         let count = self.#count_field as usize;
@@ -153,6 +177,9 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
                 let add_method = format_ident!("add_{}", field.name.trim_end_matches('s'));
                 methods.push(quote! {
+                    #[doc = concat!("Adds an item to ", stringify!(#field_name))]
+                    #[doc = ""]
+                    #[doc = concat!("Returns `Err(\"Array full\")` if capacity (", #max_count, ") is reached.")]
                     pub fn #add_method(&mut self, item: #elem_type) -> Result<(), &'static str> {
                         if self.#count_field >= #max_count as u32 {
                             return Err("Array full");
@@ -168,9 +195,20 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
     Ok(quote! {
         impl #name {
+            #[doc = "Compile-time constant for struct size in bytes"]
             pub const SIZE: usize = #size;
+
+            #[doc = "Compile-time constant for struct alignment in bytes"]
             pub const ALIGNMENT: usize = #alignment;
 
+            #[doc = "Converts a raw pointer to a reference to this message type"]
+            #[doc = ""]
+            #[doc = "# Safety"]
+            #[doc = ""]
+            #[doc = "The pointer must be non-null, properly aligned, and point to valid memory"]
+            #[doc = "containing a valid instance of this message type. The lifetime is 'static,"]
+            #[doc = "so the caller must ensure the memory remains valid for the program lifetime"]
+            #[doc = "or manually limit the reference lifetime."]
             #[inline(always)]
             pub unsafe fn from_ptr(ptr: *const u8) -> &'static Self {
                 assert!(!ptr.is_null(), "Null pointer passed to from_ptr");
@@ -182,6 +220,15 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
                 &*(ptr as *const Self)
             }
 
+            #[doc = "Converts a raw pointer to a mutable reference to this message type"]
+            #[doc = ""]
+            #[doc = "# Safety"]
+            #[doc = ""]
+            #[doc = "The pointer must be non-null, properly aligned, and point to valid memory"]
+            #[doc = "containing a valid instance of this message type. The lifetime is 'static,"]
+            #[doc = "so the caller must ensure the memory remains valid for the program lifetime"]
+            #[doc = "or manually limit the reference lifetime. No other references to this memory"]
+            #[doc = "must exist."]
             #[inline(always)]
             pub unsafe fn from_ptr_mut(ptr: *mut u8) -> &'static mut Self {
                 assert!(!ptr.is_null(), "Null pointer passed to from_ptr_mut");
@@ -196,6 +243,9 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
             #(#methods)*
         }
 
+        #[doc = "Default implementation returns a zeroed instance"]
+        #[doc = ""]
+        #[doc = "All numeric fields will be 0, all boolean fields false."]
         impl Default for #name {
             fn default() -> Self {
                 unsafe { mem::zeroed() }
@@ -206,15 +256,24 @@ fn generate_message_impl(message: &MessageLayout) -> Result<TokenStream> {
 
 fn generate_message_ffi(message: &MessageLayout) -> Result<TokenStream> {
     let name = format_ident!("{}", message.name);
+    let msg_name_str = &message.name;
     let size_fn = format_ident!("{}_size", message.name.to_lowercase());
     let align_fn = format_ident!("{}_alignment", message.name.to_lowercase());
 
     Ok(quote! {
+        #[doc = concat!("Returns the size in bytes of ", #msg_name_str)]
+        #[doc = ""]
+        #[doc = "FFI-safe function for determining struct size at runtime."]
+        #[doc = "Use for allocating memory buffers for this message type."]
         #[no_mangle]
         pub extern "C" fn #size_fn() -> usize {
             #name::SIZE
         }
 
+        #[doc = concat!("Returns the alignment requirement of ", #msg_name_str)]
+        #[doc = ""]
+        #[doc = "FFI-safe function for determining struct alignment at runtime."]
+        #[doc = "Use for properly aligning memory buffers for this message type."]
         #[no_mangle]
         pub extern "C" fn #align_fn() -> usize {
             #name::ALIGNMENT
