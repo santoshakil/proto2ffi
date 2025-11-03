@@ -994,4 +994,290 @@ mod tests {
         assert!(engine.stats.total_queries >= 2);
         assert!(!engine.stats.query_times.is_empty());
     }
+
+    #[test]
+    fn test_concurrent_table_creation() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..10 {
+                        let table_name = format!("table_{}_{}", i, j);
+                        let mut eng = engine.lock().unwrap();
+                        eng.create_table(
+                            &table_name,
+                            vec![
+                                ("id".to_string(), DataType::INTEGER),
+                                ("name".to_string(), DataType::TEXT),
+                            ],
+                        );
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.tables.len() >= 80);
+    }
+
+    #[test]
+    fn test_concurrent_transactions() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..4)
+            .map(|_| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for _ in 0..50 {
+                        let mut eng = engine.lock().unwrap();
+                        let _tx = eng.begin_transaction(IsolationLevel::READ_COMMITTED);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.transactions.len() >= 200);
+    }
+
+    #[test]
+    fn test_concurrent_query_execution() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+        use std::sync::atomic::{AtomicU64, Ordering};
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+        let queries_executed = Arc::new(AtomicU64::new(0));
+
+        {
+            let mut eng = engine.lock().unwrap();
+            eng.create_table("test", vec![("id".to_string(), DataType::INTEGER)]);
+        }
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let engine = Arc::clone(&engine);
+                let queries_executed = Arc::clone(&queries_executed);
+                thread::spawn(move || {
+                    for _ in 0..25 {
+                        let mut eng = engine.lock().unwrap();
+                        eng.execute_query("SELECT * FROM test").ok();
+                        queries_executed.fetch_add(1, Ordering::Relaxed);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        assert_eq!(queries_executed.load(Ordering::Relaxed), 200);
+    }
+
+    #[test]
+    fn test_concurrent_index_operations() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        {
+            let mut eng = engine.lock().unwrap();
+            eng.create_table("test", vec![("id".to_string(), DataType::INTEGER)]);
+        }
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let index_name = format!("idx_{}_{}", i, j);
+                        let mut eng = engine.lock().unwrap();
+                        eng.create_index(
+                            &index_name,
+                            "test",
+                            vec!["id".to_string()],
+                            IndexType::BTREE,
+                            false,
+                        );
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.indexes.len() >= 100);
+    }
+
+    #[test]
+    fn test_concurrent_data_type_usage() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..8)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..25 {
+                        let table_name = format!("dt_{}_{}", i, j);
+                        let mut eng = engine.lock().unwrap();
+                        eng.create_table(
+                            &table_name,
+                            vec![
+                                ("id".to_string(), DataType::INTEGER),
+                                ("value".to_string(), DataType::REAL),
+                                ("name".to_string(), DataType::TEXT),
+                                ("data".to_string(), DataType::BLOB),
+                            ],
+                        );
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.tables.len() >= 200);
+    }
+
+    #[test]
+    fn test_mixed_concurrent_database_operations() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..10 {
+                        let table_name = format!("t_{}_{}", i, j);
+                        let index_name = format!("i_{}_{}", i, j);
+
+                        let mut eng = engine.lock().unwrap();
+                        eng.create_table(
+                            &table_name,
+                            vec![("id".to_string(), DataType::INTEGER)],
+                        );
+
+                        let _tx = eng.begin_transaction(IsolationLevel::READ_COMMITTED);
+                        eng.create_index(
+                            &index_name,
+                            &table_name,
+                            vec!["id".to_string()],
+                            IndexType::BTREE,
+                            false,
+                        );
+                        eng.execute_query(&format!("SELECT * FROM {}", table_name)).ok();
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.tables.len() >= 40);
+        assert!(engine.indexes.len() >= 40);
+        assert!(engine.transactions.len() >= 40);
+    }
+
+    #[test]
+    fn test_extreme_concurrent_database_load() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..16)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..5 {
+                        let table_name = format!("tbl_{}_{}", i, j);
+                        let mut eng = engine.lock().unwrap();
+
+                        eng.create_table(
+                            &table_name,
+                            vec![
+                                ("id".to_string(), DataType::INTEGER),
+                                ("value".to_string(), DataType::REAL),
+                            ],
+                        );
+
+                        let _tx = eng.begin_transaction(IsolationLevel::SERIALIZABLE);
+                        eng.execute_query(&format!("SELECT * FROM {}", table_name)).ok();
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.tables.len() >= 80);
+    }
+
+    #[test]
+    fn test_concurrent_isolation_levels() {
+        use std::sync::{Arc, Mutex};
+        use std::thread;
+
+        let engine = Arc::new(Mutex::new(DatabaseEngine::new()));
+
+        let handles: Vec<_> = (0..3)
+            .map(|i| {
+                let engine = Arc::clone(&engine);
+                thread::spawn(move || {
+                    for j in 0..20 {
+                        let mut eng = engine.lock().unwrap();
+                        let level = match (i + j) % 3 {
+                            0 => IsolationLevel::READ_UNCOMMITTED,
+                            1 => IsolationLevel::READ_COMMITTED,
+                            _ => IsolationLevel::SERIALIZABLE,
+                        };
+                        let _tx = eng.begin_transaction(level);
+                    }
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let engine = engine.lock().unwrap();
+        assert!(engine.transactions.len() >= 60);
+    }
 }
