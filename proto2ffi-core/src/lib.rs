@@ -30,6 +30,7 @@ pub mod layout;
 pub mod generator;
 pub mod validator;
 pub mod benchmark;
+pub mod utils;
 
 pub use error::{Proto2FFIError, Result};
 pub use types::{ProtoFile, Message, Field, FieldType, Enum, EnumVariant};
