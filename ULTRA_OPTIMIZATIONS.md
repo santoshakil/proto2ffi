@@ -48,40 +48,31 @@ Speedup: 2.9x vs pooled individual
 
 ## Potential Future Optimizations
 
-### 3. 🔥 Direct Struct Passing (Not Yet Implemented)
+### 3. ❌ Direct Struct Passing (TESTED - SLOWER THAN PROTOBUF)
 
-**Estimated: 5-10x speedup for simple operations**
+**Result: Actually SLOWER than protobuf**
 
-**Concept:** Skip protobuf entirely for primitive operations
+**Tested in archive/calculator - Findings:**
 
-```c
-// C struct definition
-typedef struct {
-  uint8_t op_code;  // 0=add, 1=sub, 2=mul, 3=div
-  int64_t a;
-  int64_t b;
-} SimpleOp;
-
-// Direct FFI call
-int64_t calculator_process_direct(SimpleOp op);
+```
+Raw C struct:     ~300-500ns overhead (field-by-field copy)
+Protobuf + FFI:   ~100-200ns overhead (optimized codegen)
 ```
 
-```dart
-// Dart usage
-final result = _bindings.calculatorProcessDirect(
-  SimpleOp()
-    ..opCode = 0  // ADD
-    ..a = 10
-    ..b = 5
-);
-```
+**Why direct structs are slower:**
+- Dart class → C struct: Manual field copying
+- C struct → Rust struct: More field copying
+- Rust struct → C struct: Field copying again
+- C struct → Dart class: Final copy
+- Total: 4 conversion layers, each with overhead
 
-**Overhead removed:**
-- Protobuf serialization: ~27ns
-- Object creation: ~20ns
-- Total saved: ~50ns
+**Why protobuf is faster:**
+- Dart protobuf → bytes: Optimized codegen, single memcpy
+- Bytes pointer across FFI: Zero-cost pointer passing
+- Bytes → Rust protobuf: Optimized decoder
+- Total: 2 optimized conversions
 
-**Expected result: 0.1-0.2µs per call (5-10M ops/sec)**
+**Conclusion: Protobuf's optimized codegen beats manual struct conversion**
 
 ### 4. 🔥 Arena Allocation in Rust
 
@@ -231,9 +222,10 @@ Throughput: 1.5M - 4.5M ops/sec
 
 ### Near Future (v1.1) - Easy Wins
 ```
-+ Direct struct for simple ops
-Expected: 0.1-0.2µs per simple op
-Speedup: 3-6x for add/sub/mul/div
++ Arena allocation in Rust
++ SIMD processing for batches
+Expected: 0.15-0.2µs per op in batches
+Speedup: 1.5-2x for batch operations
 ```
 
 ### Mid-term (v1.5) - Rust Optimizations
@@ -257,9 +249,9 @@ Throughput: 50M+ ops/sec
 
 | Optimization | Complexity | Gain | When to Use |
 |--------------|------------|------|-------------|
-| Object pooling | Low | 1.8x | Always |
-| Batch processing | Low | 4x | Multiple ops |
-| Direct structs | Medium | 5-10x | Simple ops only |
+| Object pooling | Low | 1.8x | Always ✅ |
+| Batch processing | Low | 4x | Multiple ops ✅ |
+| ~~Direct structs~~ | ~~Medium~~ | ❌ Slower | ~~Never - use protobuf~~ |
 | Arena allocation | Medium | 1.5-2x | Large batches |
 | Async batching | Medium | 4x | Async code |
 | SIMD | High | 2-4x | >1000 batch |
@@ -297,14 +289,14 @@ Throughput: 50M+ ops/sec
 - [x] Comprehensive benchmarks
 
 ### Phase 2: 📅 Next (1-2 days)
-- [ ] Direct struct passing for simple ops
-- [ ] Benchmark comparison
-- [ ] Update docs
+- [x] ~~Direct struct passing~~ - TESTED: Slower than protobuf ❌
+- [ ] Arena allocation in Rust
+- [ ] SIMD batch processing exploration
 
 ### Phase 3: 📅 Soon (3-5 days)
-- [ ] Arena allocation in Rust
-- [ ] SIMD batch processing
 - [ ] Async auto-batching
+- [ ] Advanced SIMD optimizations
+- [ ] Benchmark comprehensive analysis
 
 ### Phase 4: 🔮 Future (1-2 weeks)
 - [ ] Shared memory implementation

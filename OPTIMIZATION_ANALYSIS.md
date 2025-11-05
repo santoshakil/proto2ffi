@@ -95,32 +95,25 @@ class BufferPool {
 
 **Expected gain:** 2-3x faster (reduce GC pauses)
 
-#### 2. Hybrid Direct-Struct + Protobuf
+#### 2. ❌ Direct Struct Passing (TESTED - REJECTED)
 
-**Problem:** Protobuf overhead for simple operations
+**Problem:** Hypothesis: Skip protobuf for simple operations
 
-**Solution:** Direct C struct for primitives
-```c
-typedef struct {
-  uint8_t op_code;  // 0=add, 1=sub, 2=mul, 3=div
-  int64_t a;
-  int64_t b;
-} SimpleOp;
+**Result:** SLOWER than protobuf (tested in archive/calculator)
 
-int64_t calculator_process_simple(SimpleOp op);
+```
+Raw C struct:     ~300-500ns overhead (field-by-field copy)
+Protobuf + FFI:   ~100-200ns overhead (optimized codegen)
 ```
 
-**Dart:**
-```dart
-final struct = Struct.create<SimpleOp>()
-  ..opCode = 0
-  ..a = 10
-  ..b = 5;
-final result = _bindings.calculatorProcessSimple(struct);
-// No protobuf encoding/decoding!
-```
+**Why it failed:**
+- Dart class → C struct: Manual field copying
+- C struct → Rust struct: More field copying
+- 4 conversion layers vs 2 optimized protobuf conversions
+- Protobuf codegen is highly optimized
+- Loss of schema evolution and type safety
 
-**Expected gain:** 5-10x faster for simple ops (skip serialization entirely)
+**Conclusion:** Stick with protobuf - it's already optimal ✅
 
 #### 3. Arena Allocation in Rust
 
@@ -342,10 +335,10 @@ fn process_batch_gpu(ops: &[BinaryOp]) -> Vec<i64> {
 2. ✅ Inline attributes in Rust
 3. ✅ Arena allocation for batches
 
-### Phase 2: Hybrid Approach (2 days)
-1. ✅ Direct struct passing for simple ops
-2. ✅ Keep protobuf for complex data
-3. ✅ Benchmark comparison
+### Phase 2: Advanced Optimizations (2 days)
+1. ❌ ~~Direct struct passing~~ - Tested, found slower than protobuf
+2. ⏳ Arena allocation in Rust
+3. ⏳ SIMD batch processing
 
 ### Phase 3: Async & SIMD (2 days)
 1. ✅ Async batching queue
@@ -365,9 +358,9 @@ Current baseline:
   Batch 1000: 0.14µs per op
 
 With all optimizations:
-  Individual (direct struct): 0.5µs (6.8x faster)
-  Batch 1000 (arena + SIMD): 0.05µs per op (2.8x faster)
-  Overall: ~70ns per op = 14M ops/sec
+  Individual (with pooling): 0.65µs (current best)
+  Batch 1000 (arena + SIMD): 0.05-0.08µs per op (3-5x faster)
+  Overall: ~50-80ns per op = 12-20M ops/sec
 ```
 
 ## Clean Code Principles
@@ -409,10 +402,11 @@ heaptrack ./target/release/benchmark
 ## Conclusion
 
 **Most impactful optimizations:**
-1. Object pooling (2-3x)
-2. Direct struct for simple ops (5-10x)
-3. Arena allocation (1.5-2x)
+1. Object pooling (1.8x) ✅ IMPLEMENTED
+2. Batch processing (4.3x) ✅ IMPLEMENTED
+3. Arena allocation (1.5-2x) ⏳ PLANNED
+4. SIMD processing (2-4x) ⏳ PLANNED
 
-**Combined potential: 15-60x faster for hot paths**
+**Combined potential: 10-20x faster for hot paths**
 
 **Philosophy:** Measure first, optimize second, maintain always.
