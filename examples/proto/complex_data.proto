@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package calculator;
+
+import "calculator.proto";
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip_code = 4;
+  string country = 5;
+  double latitude = 6;
+  double longitude = 7;
+}
+
+message Person {
+  string id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string email = 4;
+  int32 age = 5;
+  Address home_address = 6;
+  Address work_address = 7;
+  repeated string phone_numbers = 8;
+  map<string, string> metadata = 9;
+}
+
+message Transaction {
+  string transaction_id = 1;
+  int64 timestamp = 2;
+  double amount = 3;
+  string currency = 4;
+  Person sender = 5;
+  Person receiver = 6;
+  repeated string tags = 7;
+  map<string, double> fees = 8;
+}
+
+message DataBatch {
+  repeated Transaction transactions = 1;
+  int64 batch_id = 2;
+  int64 created_at = 3;
+}
+
+message ComplexCalculationRequest {
+  oneof operation {
+    BinaryOp add = 1;
+    BinaryOp subtract = 2;
+    BinaryOp multiply = 3;
+    BinaryOp divide = 4;
+    BatchOperation batch = 5;
+    ComplexDataOperation complex = 6;
+  }
+}
+
+message BatchOperation {
+  repeated BinaryOp operations = 1;
+}
+
+message ComplexDataOperation {
+  DataBatch data = 1;
+  string operation_type = 2;
+}
+
+message ComplexCalculationResponse {
+  oneof result {
+    int64 value = 1;
+    ErrorResult error = 2;
+    BatchResult batch_result = 3;
+    ComplexDataResult complex_result = 4;
+  }
+}
+
+message BatchResult {
+  repeated int64 values = 1;
+  int32 success_count = 2;
+  int32 error_count = 3;
+}
+
+message ComplexDataResult {
+  int32 transaction_count = 1;
+  double total_amount = 2;
+  int64 processing_time_ns = 3;
+  map<string, int32> stats = 4;
+}

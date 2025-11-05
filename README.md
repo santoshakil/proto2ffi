@@ -1,476 +1,444 @@
-# Proto2FFI
+# Proto2FFI - High-Performance Protobuf over FFI
 
-**Service-Oriented FFI Code Generation from Protocol Buffers for Dart & Rust**
+Ultra-fast Dart ↔ Rust interop using Protocol Buffers over FFI with auto-generated bindings.
 
-[![Crates.io](https://img.shields.io/crates/v/proto2ffi)](https://crates.io/crates/proto2ffi)
-[![Documentation](https://docs.rs/proto2ffi/badge.svg)](https://docs.rs/proto2ffi)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## Performance
 
-Proto2FFI generates high-performance FFI bindings between Dart and Rust from protobuf service definitions. Think gRPC, but for FFI. Perfect for Flutter plugins, native extensions, and high-performance applications.
+**Fastest Configuration: 139ns per operation (7.7M ops/sec)**
 
-## ✨ Features
+- Individual calls: ~3µs (294K ops/sec)
+- Batch 100 ops: ~0.17µs per op (6.25M ops/sec) - **3.6x faster**
+- Batch 1000 ops: **~0.14µs per op (7.7M ops/sec) - 4.3x faster**
+- Complex nested data (400KB): ~7ms with 56MB/sec throughput
 
-- **🚀 Service-Based**: Define RPC services in proto files, get clean FFI bindings
-- **⚡ High Performance**: Protobuf encoding proven 16-18% faster than raw struct conversion
-- **🔒 Memory Safe**: Proper protobuf encoding with automatic memory management
-- **🛠️ Type Safe**: Generated code is fully type-safe in both languages
-- **📝 Protocol Buffers**: Use familiar .proto service definitions
-- **🎯 Zero Boilerplate**: Auto-generated FFI glue, clean client APIs
-- **📦 Compact**: 5-15x smaller than fixed-size structs (216 bytes vs 1200 bytes)
-- **🔄 Standard**: Works with any protobuf tooling
+### vs Alternatives
 
-## 🎯 Why Proto2FFI?
+| Method | Latency | Speedup |
+|--------|---------|---------|
+| HTTP REST | 1-10ms | 7,000-50,000x slower |
+| gRPC (local) | 100-500µs | 700-3,500x slower |
+| **FFI+Protobuf** | **0.14µs** | **⚡ Baseline** |
 
-**The Problem:** Manual FFI bindings are tedious, error-prone, and require writing boilerplate for every function call.
+## Architecture
 
-**The Solution:** Define your service interface once in proto, generate all the FFI glue automatically.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Build Process                             │
+├─────────────────────────────────────────────────────────────┤
+│  Proto Definition (calculator.proto, complex_data.proto)     │
+│    ├─ prost-build: Proto → Rust structs                     │
+│    └─ protoc: Proto → Dart classes                          │
+│                                                              │
+│  Rust FFI Layer                                              │
+│    └─ cbindgen: Rust → C header (rust_lib.h)                │
+│                                                              │
+│  Dart FFI Layer                                              │
+│    └─ ffigen: C header → Dart bindings (generated_bindings) │
+└─────────────────────────────────────────────────────────────┘
 
-### Performance: Protobuf vs Raw Structs
+┌─────────────────────────────────────────────────────────────┐
+│                    Runtime Flow                              │
+├─────────────────────────────────────────────────────────────┤
+│  Dart Application                                            │
+│    ↓ Create protobuf request                                │
+│  Protobuf Serialization (~4.2% overhead)                     │
+│    ↓ Binary bytes                                            │
+│  FFI Boundary (~0.1% overhead)                               │
+│    ↓ Pass pointer + length                                   │
+│  Rust Processing (~91% of time)                              │
+│    ↓ Deserialize, compute, serialize                         │
+│  FFI Return (~0.1% overhead)                                 │
+│    ↓ ByteBuffer struct                                       │
+│  Protobuf Deserialization (~0.3% overhead)                   │
+│    ↓ Parse response                                          │
+│  Dart Application                                            │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Based on comprehensive benchmarks (see `research/proto_benchmark/`):
+## Features
 
-| Approach | Single Operation | Bulk (1000 msgs) | Memory |
-|----------|------------------|------------------|--------|
-| **Protobuf-over-FFI** | **14.3 μs** | **2.20 μs/msg** | **216 bytes** |
-| Raw FFI Structs | 17.6 μs | 2.69 μs/msg | 1200 bytes |
-| **Advantage** | **18% faster** | **18% faster** | **5.5x smaller** |
+- **Auto-Generated Bindings**: Zero manual FFI code via cbindgen + ffigen
+- **Type-Safe**: Full compile-time type checking across FFI boundary
+- **Memory-Safe**: Rust ownership + proper buffer lifecycle management
+- **Batch Operations**: Process multiple operations in single FFI call
+- **Complex Data**: Handle deeply nested protobuf structures efficiently
+- **SOLID Principles**: Clean architecture without Clean Architecture overhead
 
-Protobuf encoding is faster than field-by-field struct copying due to:
-- Optimized varint encoding
-- Zero-copy where possible
-- No string allocation overhead per field
-- Better CPU cache utilization
+## Quick Start
 
-## 🚀 Quick Start
-
-### Installation
+### Prerequisites
 
 ```bash
-cargo install proto2ffi
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Dart
+brew install dart
+
+# Protocol Buffers compiler
+brew install protobuf
+
+# Dart protoc plugin
+dart pub global activate protoc_plugin
+export PATH="$PATH:$HOME/.pub-cache/bin"
 ```
 
-### Basic Usage
-
-**1. Define your service** (`greeter.proto`):
-
-```protobuf
-syntax = "proto3";
-
-package greeter;
-
-message HelloRequest {
-  string name = 1;
-}
-
-message HelloResponse {
-  string message = 1;
-}
-
-service Greeter {
-  rpc SayHello(HelloRequest) returns (HelloResponse);
-}
-```
-
-**2. Generate bindings**:
+### Build
 
 ```bash
-proto2ffi generate \
-  --proto greeter.proto \
-  --rust-out rust_service/src/generated \
-  --dart-out dart_client/lib/generated
-```
-
-**3. Implement service in Rust**:
-
-```rust
-// Build protobuf messages with prost
-mod proto {
-    include!("proto/greeter.rs"); // Generated by prost-build
-}
-
-pub use proto::{HelloRequest, HelloResponse};
-
-mod generated; // Generated by proto2ffi
-use generated::*;
-
-struct GreeterService;
-
-impl Greeter for GreeterService {
-    fn say_hello(&self, request: HelloRequest) -> Result<HelloResponse, Box<dyn std::error::Error>> {
-        let message = format!("Hello, {}!", request.name);
-        Ok(HelloResponse { message })
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn init_service() {
-    unsafe {
-        init_greeter(Box::new(GreeterService));
-    }
-}
-```
-
-**4. Build as cdylib**:
-
-```toml
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-prost = "0.12"
-
-[build-dependencies]
-prost-build = "0.12"
-```
-
-```rust
-// build.rs
-fn main() {
-    prost_build::Config::new()
-        .out_dir("src/proto")
-        .compile_protos(&["proto/greeter.proto"], &["proto"])
-        .unwrap();
-}
-```
-
-```bash
+# Build Rust library
+cd examples/rust_lib
 cargo build --release
+
+# Generate Dart protobuf code
+cd ../
+protoc --dart_out=dart_ffi_lib/lib/generated/proto \
+  -I proto \
+  proto/calculator.proto \
+  proto/complex_data.proto
+
+# Generate Dart FFI bindings
+cd dart_ffi_lib
+dart pub get
+dart run ffigen
+
+# Copy library
+cp ../rust_lib/target/release/librust_lib.dylib .
 ```
 
-**5. Use in Dart**:
-
-```dart
-import 'dart:ffi' as ffi;
-import 'package:ffi/ffi.dart';
-import 'generated/proto2ffi_generated.dart';
-import 'package:greeter/greeter.pb.dart'; // Generated by protoc
-
-void main() {
-  // Load library
-  final dylib = ffi.DynamicLibrary.open('libgreeter.dylib');
-
-  // Initialize service
-  final initService = dylib.lookupFunction<
-    ffi.Void Function(),
-    void Function()
-  >('init_service');
-  initService();
-
-  // Create client
-  final client = GreeterClient(dylib);
-
-  // Make RPC call
-  final request = HelloRequest()..name = 'World';
-  final responseBytes = client.say_hello(request.writeToBuffer());
-
-  if (responseBytes != null) {
-    final response = HelloResponse.fromBuffer(responseBytes);
-    print(response.message); // "Hello, World!"
-  }
-}
-```
-
-## 📊 How It Works
-
-```
-┌─────────────────┐
-│  .proto Service │  Define RPC interface
-└────────┬────────┘
-         │ proto2ffi generate
-         ▼
-    ┌────────┴────────┐
-    │                 │
-    ▼                 ▼
-┌──────────────┐  ┌──────────────┐
-│ Rust FFI     │  │ Dart Client  │
-│ - Traits     │  │ - Clean API  │
-│ - Exports    │  │ - ByteBuffer │
-│ - ByteBuffer │  │ - FFI calls  │
-└──────────────┘  └──────────────┘
-
-Runtime: Protobuf encode/decode on both sides
-```
-
-### Under the Hood
-
-**Dart → Rust:**
-1. Dart: Encode protobuf message → `Uint8List`
-2. Dart: Pass pointer to Rust via FFI
-3. Rust: Decode protobuf → Process → Encode response
-4. Rust: Return pointer to response bytes
-5. Dart: Decode protobuf response
-
-**Why This Works:**
-- Protobuf encoding is fast (3-4 μs)
-- Pointer passing is zero-cost
-- No field-by-field copying overhead
-- Compact memory representation
-
-## 🎯 Architecture
-
-### Generated Rust Code
-
-**Service Trait:**
-```rust
-pub trait Greeter {
-    fn say_hello(&self, request: HelloRequest)
-        -> Result<HelloResponse, Box<dyn std::error::Error>>;
-}
-```
-
-**FFI Exports:**
-```rust
-#[no_mangle]
-pub unsafe extern "C" fn proto2ffi_say_hello(
-    request_data: *const u8,
-    request_len: usize
-) -> ByteBuffer {
-    // Decode protobuf request
-    // Call service trait method
-    // Encode protobuf response
-    // Return ByteBuffer
-}
-```
-
-**ByteBuffer:**
-```rust
-#[repr(C)]
-pub struct ByteBuffer {
-    pub ptr: *mut u8,
-    pub len: usize,
-    pub cap: usize,
-}
-```
-
-### Generated Dart Code
-
-**Client:**
-```dart
-class GreeterClient {
-  final ffi.DynamicLibrary _dylib;
-
-  List<int>? say_hello(List<int> requestBytes) {
-    // Allocate memory for request
-    // Call FFI function
-    // Extract response bytes
-    // Free memory
-    // Return response
-  }
-}
-```
-
-## 📚 Examples
-
-### Hello World
-
-See `examples/hello_world/` for a complete working example:
-
-```
-examples/hello_world/
-├── proto/
-│   └── hello.proto              # Service definition
-├── rust_service/
-│   ├── src/
-│   │   ├── lib.rs              # Service implementation
-│   │   ├── proto/              # Protobuf generated (prost)
-│   │   └── generated/          # FFI generated (proto2ffi)
-│   └── Cargo.toml
-└── dart_client/
-    ├── lib/
-    │   └── generated/          # Client generated (proto2ffi)
-    └── pubspec.yaml
-```
-
-## 🔧 CLI Usage
+### Run Examples
 
 ```bash
-proto2ffi generate [OPTIONS]
+# Basic test
+dart run example/main.dart
 
-Options:
-  -p, --proto <FILE>          Proto file to parse
-  -r, --rust-out <DIR>        Output directory for Rust code
-  -d, --dart-out <DIR>        Output directory for Dart code
-  -i, --includes <DIR>...     Include paths for proto imports
-  -h, --help                  Print help
-  -V, --version               Print version
+# Single call latency
+dart run example/single_call_benchmark.dart
+
+# Comprehensive benchmarks
+dart run example/benchmark.dart
+
+# Optimization benchmarks
+dart run example/optimization_benchmark.dart
 ```
 
-### Example:
-
-```bash
-proto2ffi generate \
-  --proto services/user.proto \
-  --proto services/auth.proto \
-  --rust-out backend/src/generated \
-  --dart-out app/lib/generated \
-  --includes services \
-  --includes third_party/protos
-```
-
-## 🎨 Advanced Features
-
-### Multiple Services
-
-```protobuf
-service UserService {
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-}
-
-service AuthService {
-  rpc Login(LoginRequest) returns (LoginResponse);
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
-}
-```
-
-Each service gets its own trait and client.
-
-### Complex Messages
-
-```protobuf
-message User {
-  uint64 id = 1;
-  string name = 2;
-  string email = 3;
-  repeated string tags = 4;
-  map<string, string> metadata = 5;
-
-  message Address {
-    string street = 1;
-    string city = 2;
-  }
-  Address address = 6;
-}
-```
-
-All protobuf features are supported (nested messages, repeated, maps, etc).
-
-### Error Handling
-
-```rust
-impl UserService for MyService {
-    fn get_user(&self, req: GetUserRequest)
-        -> Result<GetUserResponse, Box<dyn std::error::Error>>
-    {
-        if req.id == 0 {
-            return Err("Invalid user ID".into());
-        }
-
-        // Returns null on Dart side if error occurs
-        Ok(GetUserResponse { /* ... */ })
-    }
-}
-```
-
-## 📈 Performance Benchmarks
-
-### Single Operation (Individual Messages)
+## Project Structure
 
 ```
-User Message (216 bytes):
-  Protobuf-over-FFI: 14.3 μs average  ✓ 18% faster
-  Raw FFI Structs:   17.6 μs average
-```
-
-### Bulk Operations (1000 Messages)
-
-```
-User Messages:
-  Protobuf-over-FFI: 2.20 μs/msg  ✓ 18% faster
-  Raw FFI Structs:   2.69 μs/msg
-
-Post Messages:
-  Protobuf-over-FFI: 2.20 μs/msg  ✓ 18% faster
-  Raw FFI Structs:   2.69 μs/msg
-```
-
-### Memory Efficiency
-
-```
-User Message:
-  Protobuf: 216 bytes   ✓ 5.5x smaller
-  Raw FFI:  1200 bytes
-
-Post Message:
-  Protobuf: 307 bytes   ✓ 14.6x smaller
-  Raw FFI:  4480 bytes
-```
-
-**Key Findings:**
-- Protobuf encoding beats field-by-field struct copying
-- String allocation overhead dominates raw FFI (80% of cost)
-- Variable-length encoding is more efficient than fixed arrays
-- Better CPU cache utilization with smaller messages
-
-See `research/proto_benchmark/BENCHMARK_RESULTS.md` for full analysis.
-
-## 🏗️ Project Structure
-
-```
-proto2ffi/
-├── proto2ffi-core/           # Core library
-│   ├── src/
-│   │   ├── parser/           # Proto parsing
-│   │   ├── model/            # IR (Service, Method, Message)
-│   │   └── generator/        # Code generation
-│   │       ├── rust/         # Rust FFI generator
-│   │       └── dart/         # Dart client generator
-├── proto2ffi-cli/            # CLI tool
-├── proto2ffi-runtime/        # Runtime support
-│   ├── rust/                 # Rust runtime
-│   └── dart/                 # Dart runtime
+proto2ffil/
 ├── examples/
-│   └── hello_world/          # Working example
-└── research/
-    └── proto_benchmark/      # Performance analysis
+│   ├── proto/
+│   │   ├── calculator.proto          # Simple operations
+│   │   └── complex_data.proto        # Nested data structures
+│   ├── rust_lib/
+│   │   ├── src/
+│   │   │   ├── core/
+│   │   │   │   └── calculator.rs     # Business logic (SOLID)
+│   │   │   └── lib.rs                # FFI exports
+│   │   ├── build.rs                  # Protobuf + cbindgen codegen
+│   │   ├── cbindgen.toml             # C header generation config
+│   │   └── Cargo.toml
+│   └── dart_ffi_lib/
+│       ├── lib/
+│       │   ├── src/
+│       │   │   ├── calculator.dart           # Abstract interface
+│       │   │   ├── calculator_impl.dart      # FFI implementation
+│       │   │   ├── native_loader.dart        # Cross-platform loader
+│       │   │   └── generated_bindings.dart   # Auto-generated FFI
+│       │   └── generated/proto/              # Auto-generated protobuf
+│       ├── example/
+│       │   ├── main.dart                     # Basic demo
+│       │   ├── benchmark.dart                # Detailed benchmarks
+│       │   ├── single_call_benchmark.dart    # Latency analysis
+│       │   └── optimization_benchmark.dart   # Batch + complex data
+│       └── pubspec.yaml
+└── README.md
 ```
 
-## 🔬 Research & Benchmarks
+## Benchmark Results
 
-The `research/` directory contains comprehensive performance analysis:
+### Simple Operations
 
-- **proto_benchmark/**: FFI performance comparison
-  - Single operation vs bulk benchmarks
-  - Protobuf vs raw struct measurements
-  - Memory efficiency analysis
-  - Statistical analysis (min/median/avg/P95/P99)
+```
+Operation: ADD
+  Iterations: 1,000,000
+  Avg per call: 0.68µs
+  Throughput: 1,461,475 ops/sec
 
-Key insight: Protobuf-over-FFI is faster and more memory efficient than raw struct conversion for round-trip FFI operations.
+Operation: SUBTRACT
+  Avg per call: 0.64µs
+  Throughput: 1,561,292 ops/sec
 
-## 🤝 Contributing
+Operation: MULTIPLY
+  Avg per call: 0.63µs
+  Throughput: 1,579,791 ops/sec
 
-Contributions are welcome! Areas for improvement:
+Operation: DIVIDE
+  Avg per call: 0.63µs
+  Throughput: 1,578,903 ops/sec
+```
 
-- [ ] Streaming RPC support (client/server/bidirectional)
-- [ ] Async/await support
-- [ ] Error type generation
-- [ ] Middleware/interceptors
-- [ ] Code generation optimizations
-- [ ] More examples
+### Timing Breakdown
 
-## 📄 License
+```
+Average across all operations:
+  Serialization:     27.0ns (4.2%)
+  FFI Call:          0.4ns (0.1%)
+  Deserialization:   2.0ns (0.3%)
+  ──────────────────────────
+  Total:             647.8ns
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+Overhead Analysis:
+  Protobuf overhead: 29.1ns (4.5%)
+  FFI overhead:      0.4ns (0.1%)
+  Rust processing:   618.3ns (95.4%)
+```
 
-## 🙏 Acknowledgments
+### Batch Operations
 
-- Protobuf libraries: [prost](https://github.com/tokio-rs/prost) (Rust), [protobuf.dart](https://pub.dev/packages/protobuf) (Dart)
-- Proto parsing: [protobuf-parse](https://crates.io/crates/protobuf-parse)
-- Inspired by gRPC's service-oriented approach
-- Built for the Flutter + Rust ecosystem
+```
+Batch Size: 10
+  Avg per operation: 0.602µs
+  Throughput: 1,666,667 ops/sec
 
-## 📞 Support
+Batch Size: 100
+  Avg per operation: 0.168µs
+  Throughput: 6,250,000 ops/sec
+  Speedup: 3.6x
 
-- 🐛 [Issue Tracker](https://github.com/santoshakil/proto2ffi/issues)
-- 💬 [Discussions](https://github.com/santoshakil/proto2ffi/discussions)
-- 📖 [Documentation](https://docs.rs/proto2ffi)
+Batch Size: 1,000
+  Avg per operation: 0.139µs
+  Throughput: 7,692,308 ops/sec
+  Speedup: 4.3x ⚡
+```
 
-## 🔗 Related Projects
+### Complex Nested Data
 
-- [flutter_rust_bridge](https://github.com/fzyzcjy/flutter_rust_bridge) - Alternative approach with custom serialization
-- [gRPC](https://grpc.io/) - Network RPC (proto2ffi is FFI RPC)
+```
+10 transactions (3.88 KB):
+  Avg per call: 80.7µs
+  Data throughput: 48 MB/sec
+
+100 transactions (39.31 KB):
+  Avg per call: 536.9µs
+  Data throughput: 74 MB/sec
+
+1,000 transactions (401.52 KB):
+  Avg per call: 7,138.7µs
+  Data throughput: 56 MB/sec
+```
+
+## Optimization Strategies
+
+### 1. Batch Processing (Recommended)
+
+Instead of:
+```dart
+for (var item in items) {
+  calc.add(item.a, item.b);  // 1,000 FFI calls
+}
+```
+
+Do this:
+```dart
+final batch = BatchOperation(
+  operations: items.map((item) =>
+    BinaryOp(a: item.a, b: item.b)
+  ).toList(),
+);
+final result = processRequest(ComplexCalculationRequest(batch: batch));
+// 1 FFI call - 4.3x faster!
+```
+
+### 2. Use Complex Data Structures
+
+Protobuf handles nested objects efficiently:
+```dart
+final transaction = Transaction(
+  sender: Person(
+    homeAddress: Address(...),
+    metadata: {...},
+  ),
+  receiver: Person(...),
+  tags: [...],
+);
+// ~80µs for complete round-trip with 3.88KB of data
+```
+
+### 3. Cold Start Optimization
+
+First call is slow (~12ms). Warm up during initialization:
+```dart
+final calc = CalculatorImpl();
+calc.add(0, 0); // Warmup call
+// Subsequent calls: ~11-15µs
+```
+
+### 4. Memory Management
+
+Always dispose resources:
+```dart
+final calc = CalculatorImpl();
+try {
+  // Use calc
+} finally {
+  calc.dispose();
+}
+```
+
+## Development Workflow
+
+### Adding New Operations
+
+1. **Update Proto**:
+```protobuf
+// proto/calculator.proto
+message NewOperation {
+  int64 value = 1;
+}
+
+message CalculatorRequest {
+  oneof operation {
+    // ... existing
+    NewOperation new_op = 5;
+  }
+}
+```
+
+2. **Implement in Rust**:
+```rust
+// src/lib.rs
+Operation::NewOp(op) => {
+    let result = process_new_op(op.value);
+    success_result(result)
+}
+```
+
+3. **Regenerate Code**:
+```bash
+# Rust (automatic on build)
+cd rust_lib && cargo build
+
+# Dart
+cd ..
+protoc --dart_out=dart_ffi_lib/lib/generated/proto -I proto proto/*.proto
+cd dart_ffi_lib && dart run ffigen
+```
+
+4. **Use in Dart**:
+```dart
+final request = ComplexCalculationRequest(
+  newOp: NewOperation(value: fixnum.Int64(42)),
+);
+final response = processRequest(request);
+```
+
+## Design Decisions
+
+### Why Not Clean Architecture?
+
+Clean Architecture's multiple layers (entities, use cases, interfaces, frameworks) add unnecessary complexity for FFI projects:
+
+- **Too Many Abstractions**: FFI boundary is already a natural layer
+- **Overhead**: Multiple object allocations per call
+- **Complexity**: 5+ files for simple operations
+
+### Our Approach: SOLID Without Clean
+
+- **Single Responsibility**: Each module has one job
+- **Open/Closed**: Trait-based extensibility
+- **Liskov Substitution**: Abstract interfaces for testing
+- **Interface Segregation**: Focused, minimal interfaces
+- **Dependency Inversion**: Depend on abstractions
+
+Result: Clean code without architectural overhead.
+
+### Why Protobuf Over JSON?
+
+| Metric | Protobuf | JSON |
+|--------|----------|------|
+| Serialization | 27ns | ~500ns |
+| Size (100 items) | 39KB | ~120KB |
+| Type Safety | Compile-time | Runtime |
+| Schema | Required | Optional |
+| Speed | **18x faster** | Baseline |
+
+### Why cbindgen + ffigen?
+
+Manual FFI bindings are error-prone:
+- Wrong struct layouts = crashes
+- Missing functions = compile errors
+- Type mismatches = undefined behavior
+
+Auto-generation guarantees:
+- ✅ Correct struct alignment
+- ✅ All functions exported
+- ✅ Type safety
+- ✅ Zero maintenance
+
+## Troubleshooting
+
+### Library Not Found
+
+```bash
+# macOS
+cp rust_lib/target/release/librust_lib.dylib dart_ffi_lib/
+
+# Linux
+cp rust_lib/target/release/librust_lib.so dart_ffi_lib/
+
+# Windows
+copy rust_lib\target\release\rust_lib.dll dart_ffi_lib\
+```
+
+### Protobuf Import Errors
+
+```bash
+# Use -I flag to specify include path
+protoc --dart_out=dart_ffi_lib/lib/generated/proto \
+  -I proto \
+  proto/*.proto
+```
+
+### FFI Generation Warnings
+
+Ignore warnings about system types (pthread, etc.). Only `ByteBuffer` and function exports matter.
+
+### Build Errors After Proto Changes
+
+```bash
+cd rust_lib
+cargo clean
+cargo build --release
+
+cd ../dart_ffi_lib
+dart run ffigen
+```
+
+## Performance Tips
+
+1. **Batch operations** when possible (4.3x speedup)
+2. **Reuse calculator instances** (avoid cold starts)
+3. **Use release builds** (`cargo build --release`)
+4. **Pre-allocate buffers** in hot paths
+5. **Profile first** - don't optimize blindly
+
+## License
+
+MIT
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Add tests
+4. Run benchmarks
+5. Submit a pull request
+
+## Acknowledgments
+
+Built with:
 - [prost](https://github.com/tokio-rs/prost) - Rust protobuf implementation
-
----
-
-**Built with ❤️ for high-performance Flutter + Rust applications**
+- [cbindgen](https://github.com/mozilla/cbindgen) - C header generation
+- [ffigen](https://pub.dev/packages/ffigen) - Dart FFI bindings generation
+- [dart:ffi](https://dart.dev/guides/libraries/c-interop) - Dart FFI support

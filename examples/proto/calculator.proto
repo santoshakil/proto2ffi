@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package calculator;
+
+message CalculatorRequest {
+  oneof operation {
+    BinaryOp add = 1;
+    BinaryOp subtract = 2;
+    BinaryOp multiply = 3;
+    BinaryOp divide = 4;
+  }
+}
+
+message BinaryOp {
+  int64 a = 1;
+  int64 b = 2;
+}
+
+message CalculatorResponse {
+  oneof result {
+    int64 value = 1;
+    ErrorResult error = 2;
+  }
+}
+
+message ErrorResult {
+  string message = 1;
+}

@@ -1,0 +1,37 @@
+name: dart_ffi_lib
+description: Dart FFI library example with SOLID principles
+version: 0.1.0
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  ffi: ^2.1.0
+  protobuf: ^5.0.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  ffigen: ^19.1.0
+
+ffigen:
+  name: RustLibBindings
+  description: Auto-generated bindings for rust_lib
+  output: lib/src/generated_bindings.dart
+  headers:
+    entry-points:
+      - ../rust_lib/rust_lib.h
+  preamble: |
+    // ignore_for_file: always_specify_types
+    // ignore_for_file: camel_case_types
+    // ignore_for_file: non_constant_identifier_names
+    // ignore_for_file: unused_element
+    // ignore_for_file: unused_field
+  symbol-file:
+    output: lib/src/generated_bindings_symbols.yaml
+  structs:
+    include:
+      - ByteBuffer
+  functions:
+    include:
+      - calculator_process
+      - calculator_free_buffer
