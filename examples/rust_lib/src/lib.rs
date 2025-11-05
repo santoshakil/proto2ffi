@@ -1,8 +1,11 @@
 mod core;
 
 use core::calculator::{BasicCalculator, Calculator};
+use once_cell::sync::Lazy;
 use prost::Message;
 use std::slice;
+
+static CALCULATOR: Lazy<BasicCalculator> = Lazy::new(|| BasicCalculator);
 
 include!(concat!(env!("OUT_DIR"), "/calculator.rs"));
 
@@ -25,12 +28,12 @@ pub extern "C" fn calculator_process(data_ptr: *const u8, data_len: usize) -> By
         Err(e) => return error_response(&format!("Failed to decode request: {}", e)),
     };
 
-    let calc = BasicCalculator;
-    let response = process_request(&calc, request);
+    let response = process_request(&*CALCULATOR, request);
 
     encode_response(response)
 }
 
+#[inline(always)]
 fn process_request(calc: &impl Calculator, request: ComplexCalculationRequest) -> ComplexCalculationResponse {
     use complex_calculation_request::Operation;
 
@@ -65,7 +68,7 @@ fn process_batch(calc: &impl Calculator, batch: BatchOperation) -> ComplexCalcul
     let start = std::time::Instant::now();
     let mut results = Vec::with_capacity(batch.operations.len());
     let mut success_count = 0;
-    let mut error_count = 0;
+    let error_count = 0;
 
     for op in batch.operations {
         let result = calc.add(op.a, op.b);
@@ -122,12 +125,14 @@ fn process_complex(complex: ComplexDataOperation) -> ComplexCalculationResponse 
     }
 }
 
+#[inline(always)]
 fn success_result(value: i64) -> ComplexCalculationResponse {
     ComplexCalculationResponse {
         result: Some(complex_calculation_response::Result::Value(value)),
     }
 }
 
+#[inline(always)]
 fn error_result(msg: &str) -> ComplexCalculationResponse {
     ComplexCalculationResponse {
         result: Some(complex_calculation_response::Result::Error(ErrorResult {
@@ -136,10 +141,12 @@ fn error_result(msg: &str) -> ComplexCalculationResponse {
     }
 }
 
+#[inline(always)]
 fn error_response(msg: &str) -> ByteBuffer {
     encode_response(error_result(msg))
 }
 
+#[inline(always)]
 fn encode_response(response: ComplexCalculationResponse) -> ByteBuffer {
     let mut buf = Vec::new();
     if response.encode(&mut buf).is_err() {

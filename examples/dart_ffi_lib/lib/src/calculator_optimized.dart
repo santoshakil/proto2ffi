@@ -52,7 +52,9 @@ class CalculatorOptimized implements Calculator {
   @override
   int add(int a, int b) {
     final request = ComplexCalculationRequest(
-      add: BinaryOp(a: fixnum.Int64(a), b: fixnum.Int64(b)),
+      add: BinaryOp()
+        ..a = fixnum.Int64(a)
+        ..b = fixnum.Int64(b),
     );
     final response = _processRequestPooled(request);
 
@@ -66,7 +68,9 @@ class CalculatorOptimized implements Calculator {
   @override
   int subtract(int a, int b) {
     final request = ComplexCalculationRequest(
-      subtract: BinaryOp(a: fixnum.Int64(a), b: fixnum.Int64(b)),
+      subtract: BinaryOp()
+        ..a = fixnum.Int64(a)
+        ..b = fixnum.Int64(b),
     );
     final response = _processRequestPooled(request);
 
@@ -80,7 +84,9 @@ class CalculatorOptimized implements Calculator {
   @override
   int multiply(int a, int b) {
     final request = ComplexCalculationRequest(
-      multiply: BinaryOp(a: fixnum.Int64(a), b: fixnum.Int64(b)),
+      multiply: BinaryOp()
+        ..a = fixnum.Int64(a)
+        ..b = fixnum.Int64(b),
     );
     final response = _processRequestPooled(request);
 
@@ -94,7 +100,9 @@ class CalculatorOptimized implements Calculator {
   @override
   int? divide(int a, int b) {
     final request = ComplexCalculationRequest(
-      divide: BinaryOp(a: fixnum.Int64(a), b: fixnum.Int64(b)),
+      divide: BinaryOp()
+        ..a = fixnum.Int64(a)
+        ..b = fixnum.Int64(b),
     );
 
     try {
